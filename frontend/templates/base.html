@@ -8,9 +8,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Boris Life">
     <title>{% block title %}Boris Life{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
 </head>
 <body>
     <div class="container">
@@ -31,7 +31,7 @@
             <!-- 头像区域 -->
             <div class="sidebar-profile">
                 <div class="avatar-wrapper">
-                    <img src="{{ url_for('static', filename='avatar.jpg') }}" alt="Boris" class="avatar" width="60" height="60" loading="eager">
+                    <img src="{{ url_for('static', filename='images/avatar.jpg') }}" alt="Boris" class="avatar" width="60" height="60" loading="eager">
                 </div>
                 <span class="profile-name">无与伦比的Boris</span>
             </div>

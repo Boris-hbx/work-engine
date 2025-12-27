@@ -7,11 +7,17 @@ import json
 import uuid
 from datetime import datetime
 
-app = Flask(__name__)
+# Get the project root directory (parent of backend/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+app = Flask(__name__,
+            template_folder=os.path.join(BASE_DIR, 'frontend', 'templates'),
+            static_folder=os.path.join(BASE_DIR, 'assets'),
+            static_url_path='/assets')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(16))
 
 # Data file paths
-DATA_DIR = 'data'
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 TODOLIST_FILE = os.path.join(DATA_DIR, 'todolist.txt')
 MOTIVATION_FILE = os.path.join(DATA_DIR, 'motivation.txt')
 QUOTES_FILE = os.path.join(DATA_DIR, 'quotes.txt')
@@ -135,12 +141,12 @@ def parse_motivation():
 @app.route('/sw.js')
 def service_worker():
     """Serve service worker from root path"""
-    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+    return send_from_directory(os.path.join(BASE_DIR, 'assets'), 'sw.js', mimetype='application/javascript')
 
 @app.route('/manifest.json')
 def manifest():
     """Serve PWA manifest from root path"""
-    return send_from_directory('static', 'manifest.json', mimetype='application/json')
+    return send_from_directory(os.path.join(BASE_DIR, 'assets'), 'manifest.json', mimetype='application/json')
 
 @app.route('/')
 def index():

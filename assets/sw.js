@@ -1,8 +1,8 @@
 const CACHE_NAME = 'boris-life-v1';
 const STATIC_ASSETS = [
   '/',
-  '/static/style.css',
-  '/static/avatar.jpg'
+  '/assets/css/style.css',
+  '/assets/images/avatar.jpg'
 ];
 
 // Install - cache static assets
