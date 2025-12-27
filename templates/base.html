@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff6b6b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Boris Life">
+    <title>{% block title %}Boris Life{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧提示条 - 侧边栏收起时显示 -->
+        <div class="sidebar-hint" id="sidebar-hint">
+            <div class="hint-glow"></div>
+        </div>
+
+        <!-- 小宠物 - 始终可见 -->
+        <div class="pet" id="pet">
+            <div class="pet-eye"></div>
+            <div class="pet-eye"></div>
+            <div class="pet-eye"></div>
+        </div>
+
+        <!-- Left Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <!-- 头像区域 -->
+            <div class="sidebar-profile">
+                <div class="avatar-wrapper">
+                    <img src="{{ url_for('static', filename='avatar.jpg') }}" alt="Boris" class="avatar" width="60" height="60" loading="eager">
+                </div>
+                <span class="profile-name">无与伦比的Boris</span>
+            </div>
+
+            <div class="nav-links">
+                <a href="{{ url_for('todo') }}" class="nav-link {% if current_page == 'todo' %}active{% endif %}">Todo</a>
+                <a href="{{ url_for('motivation') }}" class="nav-link {% if current_page == 'motivation' %}active{% endif %}">激励自己</a>
+                <a href="{{ url_for('bubble') }}" class="nav-link {% if current_page == 'bubble' %}active{% endif %}">气泡图工具</a>
+                <a href="{{ url_for('aichat') }}" class="nav-link ai-link {% if current_page == 'aichat' %}active{% endif %}">
+                    <span class="ai-glow"></span>
+                    智脑中枢
+                </a>
+            </div>
+
+            <!-- 底部区域：prompt日志 + 时区 -->
+            <div class="sidebar-bottom">
+                <a href="{{ url_for('prompts') }}" class="prompt-log-link {% if current_page == 'prompts' %}active{% endif %}">
+                    <span class="prompt-icon">📝</span>
+                    <span>开发prompt日志</span>
+                </a>
+                <div class="sidebar-divider"></div>
+            </div>
+
+            <!-- 时区显示 - 侧边栏底部 -->
+            <div class="timezone-panel" id="timezone-panel">
+                <div class="timezone-item">
+                    <span class="tz-city">北京</span>
+                    <div class="tz-info">
+                        <span class="tz-datetime" id="tz-beijing-date"></span>
+                        <span class="tz-time" id="tz-beijing-time"></span>
+                    </div>
+                </div>
+                <div class="timezone-item">
+                    <span class="tz-city">滑铁卢</span>
+                    <div class="tz-info">
+                        <span class="tz-datetime" id="tz-waterloo-date"></span>
+                        <span class="tz-time" id="tz-waterloo-time"></span>
+                    </div>
+                </div>
+                <div class="timezone-item">
+                    <span class="tz-city">温哥华</span>
+                    <div class="tz-info">
+                        <span class="tz-datetime" id="tz-vancouver-date"></span>
+                        <span class="tz-time" id="tz-vancouver-time"></span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Right Main Content -->
+        <main class="main-content" id="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+    (function() {
+        var sidebar = document.getElementById('sidebar');
+        var mainContent = document.getElementById('main-content');
+        var pet = document.getElementById('pet');
+        var navLinks = document.querySelector('.nav-links');
+        var sidebarHint = document.getElementById('sidebar-hint');
+
+        var isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+        // 小宠物状态
+        var targetY = window.innerHeight / 2;
+        var currentY = targetY;
+        var petHeight = 80;
+        var sidebarWidth = 220;
+        var isFollowing = false;
+        var returnTimer = null;
+        var isReturning = false;
+
+        // 参数
+        var closeDistance = 20;
+        var rushEasing = 0.3;      // 冲刺时每帧移动30%的剩余距离
+        var gentleEasing = 0.1;    // 靠近时每帧移动10%的剩余距离
+
+        // 获取需要避让的区域（导航按钮区域）
+        function getAvoidZones() {
+            var zones = [];
+            if (navLinks && !isCollapsed) {
+                var rect = navLinks.getBoundingClientRect();
+                zones.push({ top: rect.top - 10, bottom: rect.bottom + 10 });
+            }
+            return zones;
+        }
+
+        // 检查是否在避让区域
+        function isInAvoidZone(y) {
+            var zones = getAvoidZones();
+            var petTop = y - petHeight / 2;
+            var petBottom = y + petHeight / 2;
+            for (var i = 0; i < zones.length; i++) {
+                if (petBottom > zones[i].top && petTop < zones[i].bottom) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function collapseSidebar() {
+            isCollapsed = true;
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+            pet.classList.add('at-edge');
+            pet.classList.remove('at-sidebar');
+            pet.classList.remove('slim');
+            sidebarHint.classList.add('visible');
+            localStorage.setItem('sidebarCollapsed', 'true');
+        }
+
+        function expandSidebar() {
+            isCollapsed = false;
+            sidebar.classList.remove('collapsed');
+            mainContent.classList.remove('expanded');
+            pet.classList.remove('at-edge');
+            pet.classList.add('at-sidebar');
+            sidebarHint.classList.remove('visible');
+            localStorage.setItem('sidebarCollapsed', 'false');
+        }
+
+        // 初始化
+        if (isCollapsed) {
+            collapseSidebar();
+        } else {
+            pet.classList.add('at-sidebar');
+        }
+
+        pet.addEventListener('click', function() {
+            if (isCollapsed) {
+                expandSidebar();
+            } else {
+                collapseSidebar();
+            }
+        });
+
+        // 鼠标跟踪
+        document.addEventListener('mousemove', function(e) {
+            var petX = isCollapsed ? 0 : sidebarWidth;
+            var activeZone = petX + 100;
+
+            if (e.clientX < activeZone) {
+                isFollowing = true;
+                isReturning = false;
+                targetY = e.clientY;
+                pet.classList.add('active');
+
+                if (returnTimer) {
+                    clearTimeout(returnTimer);
+                    returnTimer = null;
+                }
+            } else if (isFollowing) {
+                isFollowing = false;
+                pet.classList.remove('active');
+                pet.classList.remove('excited');
+
+                returnTimer = setTimeout(function() {
+                    isReturning = true;
+                    targetY = window.innerHeight / 2;
+                }, 600);
+            }
+        });
+
+        // 动画循环
+        function animatePet() {
+            var distance = targetY - currentY;
+            var absDistance = Math.abs(distance);
+            var moveAmount = 0;
+
+            if (isFollowing) {
+                if (absDistance > closeDistance) {
+                    // 疯狂冲刺：每帧移动30%的剩余距离，极速响应
+                    moveAmount = distance * rushEasing;
+                    pet.classList.add('excited');
+                } else {
+                    // 温柔靠近：每帧移动10%的剩余距离
+                    moveAmount = distance * gentleEasing;
+                    pet.classList.remove('excited');
+                }
+            } else if (isReturning) {
+                // 返回中心：缓慢移动
+                moveAmount = distance * 0.04;
+                pet.classList.remove('excited');
+            }
+
+            currentY += moveAmount;
+
+            // 边界
+            var minY = petHeight / 2 + 20;
+            var maxY = window.innerHeight - petHeight / 2 - 20;
+            currentY = Math.max(minY, Math.min(maxY, currentY));
+
+            // 检查是否需要瘦身避让
+            if (isInAvoidZone(currentY)) {
+                pet.classList.add('slim');
+            } else {
+                pet.classList.remove('slim');
+            }
+
+            pet.style.top = currentY + 'px';
+            requestAnimationFrame(animatePet);
+        }
+
+        animatePet();
+
+        window.addEventListener('resize', function() {
+            if (!isFollowing) {
+                targetY = window.innerHeight / 2;
+            }
+        });
+    })();
+
+    // Tab按钮呼吸效果
+    (function() {
+        var tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(function(btn) {
+            btn.addEventListener('mouseenter', function() {
+                btn.classList.remove('fade-out');
+                btn.classList.add('breathing');
+            });
+            btn.addEventListener('mouseleave', function() {
+                btn.classList.remove('breathing');
+                btn.classList.add('fade-out');
+                setTimeout(function() {
+                    btn.classList.remove('fade-out');
+                }, 2000);
+            });
+        });
+    })();
+
+    // 时区更新
+    (function() {
+        var weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+        function formatTz(date) {
+            var m = date.getMonth() + 1;
+            var d = date.getDate();
+            var w = weekdays[date.getDay()];
+            var h = date.getHours().toString().padStart(2, '0');
+            var min = date.getMinutes().toString().padStart(2, '0');
+            return {
+                date: m + '/' + d + ' 周' + w,
+                time: h + ':' + min
+            };
+        }
+
+        function updateTimezones() {
+            var now = new Date();
+
+            // 北京时间
+            var beijing = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+            var bjFmt = formatTz(beijing);
+            document.getElementById('tz-beijing-date').textContent = bjFmt.date;
+            document.getElementById('tz-beijing-time').textContent = bjFmt.time;
+
+            // 滑铁卢时间
+            var waterloo = new Date(now.toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+            var wtFmt = formatTz(waterloo);
+            document.getElementById('tz-waterloo-date').textContent = wtFmt.date;
+            document.getElementById('tz-waterloo-time').textContent = wtFmt.time;
+
+            // 温哥华时间
+            var vancouver = new Date(now.toLocaleString('en-US', { timeZone: 'America/Vancouver' }));
+            var vcFmt = formatTz(vancouver);
+            document.getElementById('tz-vancouver-date').textContent = vcFmt.date;
+            document.getElementById('tz-vancouver-time').textContent = vcFmt.time;
+        }
+
+        updateTimezones();
+        setInterval(updateTimezones, 1000);
+    })();
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(function(reg) {
+                console.log('Service Worker registered:', reg.scope);
+            })
+            .catch(function(err) {
+                console.log('Service Worker registration failed:', err);
+            });
+    }
+    </script>
+</body>
+</html>

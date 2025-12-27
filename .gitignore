@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+.claude/
+.continue/
+
+# Backup files (remove this line if you want to track backups)
+backupfiles/
+
+# Temporary files
+*.tmp
+*.log
+data/config.json
