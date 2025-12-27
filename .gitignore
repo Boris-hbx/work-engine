@@ -21,6 +21,9 @@ Thumbs.db
 .claude/
 .continue/
 
+# Data files (private)
+data/
+
 # Backup files (remove this line if you want to track backups)
 backupfiles/
 
