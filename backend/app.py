@@ -24,7 +24,10 @@ QUOTES_FILE = os.path.join(DATA_DIR, 'quotes.txt')
 BUBBLES_FILE = os.path.join(DATA_DIR, 'bubbles.json')
 TODOS_FILE = os.path.join(DATA_DIR, 'todos.json')
 PROMPTS_FILE = os.path.join(DATA_DIR, 'prompts.json')
-CONFIG_FILE = os.path.join(DATA_DIR, 'config.json')
+
+# Config file (separate folder for sensitive settings)
+CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.json')
 
 def read_config():
     """Read config from config.json"""

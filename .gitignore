@@ -24,7 +24,9 @@ Thumbs.db
 # Data files (private - only sensitive files)
 data/todolist.txt
 data/todos.json
-data/config.json
+
+# Config folder (contains API keys)
+config/
 
 # Backup files (remove this line if you want to track backups)
 backupfiles/
