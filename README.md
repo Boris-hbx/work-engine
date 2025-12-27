@@ -1,4 +1,4 @@
-# Boris Life
+# Boris Life——work engine
 
 A personal life management PWA built with Flask. Organize tasks with the Eisenhower Matrix, maintain motivation, and visualize data with bubble charts.
 

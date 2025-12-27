@@ -21,8 +21,10 @@ Thumbs.db
 .claude/
 .continue/
 
-# Data files (private)
-data/
+# Data files (private - only sensitive files)
+data/todolist.txt
+data/todos.json
+data/config.json
 
 # Backup files (remove this line if you want to track backups)
 backupfiles/
