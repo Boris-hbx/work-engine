@@ -17,7 +17,7 @@
         <!-- 左侧：历史版本列表 -->
         <div class="bubble-sidebar">
             <div class="sidebar-header">
-                <h3>我的图表</h3>
+                <h3>工具栏</h3>
                 <button class="btn-new" onclick="createNew()">+ 新建</button>
             </div>
             <div class="saved-list" id="saved-list">
@@ -172,6 +172,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script>
     var chart = null;
     var currentBubbleId = null;  // 当前编辑的图表ID
@@ -263,23 +264,224 @@
         return data;
     }
 
+    // 智能标签位置计算器
+    var labelPositionCache = {};
+
+    // 8个可选方向：右、左、上、下、右上、右下、左上、左下
+    var LABEL_DIRECTIONS = [
+        { name: 'right',      anchor: 'start', align: 'right',  dx: 1,  dy: 0 },
+        { name: 'left',       anchor: 'end',   align: 'left',   dx: -1, dy: 0 },
+        { name: 'top',        anchor: 'end',   align: 'top',    dx: 0,  dy: -1 },
+        { name: 'bottom',     anchor: 'start', align: 'bottom', dx: 0,  dy: 1 },
+        { name: 'top-right',  anchor: 'start', align: 'top',    dx: 0.7, dy: -0.7 },
+        { name: 'top-left',   anchor: 'end',   align: 'top',    dx: -0.7, dy: -0.7 },
+        { name: 'bottom-right', anchor: 'start', align: 'bottom', dx: 0.7, dy: 0.7 },
+        { name: 'bottom-left',  anchor: 'end',   align: 'bottom', dx: -0.7, dy: 0.7 }
+    ];
+
+    function calculateOptimalLabelPositions(chartData, scales) {
+        var bubbles = chartData.map(function(item, index) {
+            return {
+                index: index,
+                label: item.label,
+                x: scales.x.getPixelForValue(item.x),
+                y: scales.y.getPixelForValue(item.y),
+                r: item.r * 2,  // 像素半径
+                dataX: item.x,
+                dataY: item.y
+            };
+        });
+
+        var xMin = scales.x.left;
+        var xMax = scales.x.right;
+        var yMin = scales.y.top;
+        var yMax = scales.y.bottom;
+        var xRange = scales.x.max - scales.x.min;
+        var yRange = scales.y.max - scales.y.min;
+
+        var positions = {};
+        var placedLabels = [];  // 已放置标签的边界框
+
+        // 按气泡大小排序，大的先放置（更重要）
+        var sortedBubbles = bubbles.slice().sort(function(a, b) {
+            return b.r - a.r;
+        });
+
+        sortedBubbles.forEach(function(bubble) {
+            var labelWidth = bubble.label.length * 7 + 4;  // 估算标签宽度
+            var labelHeight = 14;
+            var offset = bubble.r + 6;  // 标签距离气泡中心的距离
+
+            // 根据气泡位置确定首选方向
+            var preferredDirs = getPreferredDirections(bubble, xMin, xMax, yMin, yMax, xRange, yRange, scales);
+
+            var bestDir = null;
+            var minOverlap = Infinity;
+
+            // 遍历所有方向，找到最佳位置
+            for (var i = 0; i < preferredDirs.length; i++) {
+                var dir = preferredDirs[i];
+                var labelX = bubble.x + dir.dx * offset;
+                var labelY = bubble.y + dir.dy * offset;
+
+                // 计算标签边界框
+                var bounds = calculateLabelBounds(labelX, labelY, labelWidth, labelHeight, dir);
+
+                // 检查是否超出图表边界
+                if (bounds.left < xMin - 10 || bounds.right > xMax + 10 ||
+                    bounds.top < yMin - 10 || bounds.bottom > yMax + 10) {
+                    continue;
+                }
+
+                // 计算与其他气泡的重叠程度
+                var bubbleOverlap = 0;
+                for (var j = 0; j < bubbles.length; j++) {
+                    if (bubbles[j].index === bubble.index) continue;
+                    var other = bubbles[j];
+                    var dist = Math.sqrt(Math.pow(labelX - other.x, 2) + Math.pow(labelY - other.y, 2));
+                    if (dist < other.r + 5) {
+                        bubbleOverlap += (other.r + 5 - dist);
+                    }
+                }
+
+                // 计算与已放置标签的重叠程度
+                var labelOverlap = 0;
+                for (var k = 0; k < placedLabels.length; k++) {
+                    var placed = placedLabels[k];
+                    var overlapX = Math.max(0, Math.min(bounds.right, placed.right) - Math.max(bounds.left, placed.left));
+                    var overlapY = Math.max(0, Math.min(bounds.bottom, placed.bottom) - Math.max(bounds.top, placed.top));
+                    labelOverlap += overlapX * overlapY;
+                }
+
+                var totalOverlap = bubbleOverlap * 10 + labelOverlap;  // 气泡重叠权重更高
+
+                if (totalOverlap === 0) {
+                    bestDir = dir;
+                    placedLabels.push(bounds);
+                    break;
+                }
+
+                if (totalOverlap < minOverlap) {
+                    minOverlap = totalOverlap;
+                    bestDir = dir;
+                }
+            }
+
+            if (!bestDir) {
+                bestDir = preferredDirs[0];
+            }
+
+            // 如果没找到完美位置，记录最佳位置的边界框
+            if (minOverlap > 0 && minOverlap !== Infinity) {
+                var labelX = bubble.x + bestDir.dx * offset;
+                var labelY = bubble.y + bestDir.dy * offset;
+                placedLabels.push(calculateLabelBounds(labelX, labelY, labelWidth, labelHeight, bestDir));
+            }
+
+            positions[bubble.index] = bestDir;
+        });
+
+        return positions;
+    }
+
+    function getPreferredDirections(bubble, xMin, xMax, yMin, yMax, xRange, yRange, scales) {
+        // 计算气泡在图表中的相对位置 (0-1)
+        var relX = (bubble.dataX - scales.x.min) / xRange;
+        var relY = (bubble.dataY - scales.y.min) / yRange;
+
+        var dirs = [];
+
+        // 根据位置确定首选方向
+        // 右侧区域 → 优先左边
+        // 左侧区域 → 优先右边
+        // 上方区域 → 优先下边
+        // 下方区域 → 优先上边
+
+        if (relX > 0.7) {
+            // 气泡在右侧，标签放左边
+            dirs.push(LABEL_DIRECTIONS[1]);  // left
+            dirs.push(LABEL_DIRECTIONS[5]);  // top-left
+            dirs.push(LABEL_DIRECTIONS[7]);  // bottom-left
+        } else if (relX < 0.3) {
+            // 气泡在左侧，标签放右边
+            dirs.push(LABEL_DIRECTIONS[0]);  // right
+            dirs.push(LABEL_DIRECTIONS[4]);  // top-right
+            dirs.push(LABEL_DIRECTIONS[6]);  // bottom-right
+        }
+
+        if (relY > 0.7) {
+            // 气泡在上方，标签放下边
+            dirs.push(LABEL_DIRECTIONS[3]);  // bottom
+            if (relX <= 0.5) dirs.push(LABEL_DIRECTIONS[6]);  // bottom-right
+            if (relX > 0.5) dirs.push(LABEL_DIRECTIONS[7]);   // bottom-left
+        } else if (relY < 0.3) {
+            // 气泡在下方，标签放上边
+            dirs.push(LABEL_DIRECTIONS[2]);  // top
+            if (relX <= 0.5) dirs.push(LABEL_DIRECTIONS[4]);  // top-right
+            if (relX > 0.5) dirs.push(LABEL_DIRECTIONS[5]);   // top-left
+        }
+
+        // 添加剩余方向作为备选
+        LABEL_DIRECTIONS.forEach(function(dir) {
+            if (dirs.indexOf(dir) === -1) {
+                dirs.push(dir);
+            }
+        });
+
+        return dirs;
+    }
+
+    function calculateLabelBounds(x, y, width, height, dir) {
+        var left, right, top, bottom;
+
+        // 根据对齐方式计算边界框
+        if (dir.align === 'left') {
+            right = x - 2;
+            left = right - width;
+        } else if (dir.align === 'right') {
+            left = x + 2;
+            right = left + width;
+        } else {
+            left = x - width / 2;
+            right = x + width / 2;
+        }
+
+        if (dir.align === 'top' || dir.name.indexOf('top') >= 0) {
+            bottom = y - 2;
+            top = bottom - height;
+        } else if (dir.align === 'bottom' || dir.name.indexOf('bottom') >= 0) {
+            top = y + 2;
+            bottom = top + height;
+        } else {
+            top = y - height / 2;
+            bottom = y + height / 2;
+        }
+
+        return { left: left, right: right, top: top, bottom: bottom };
+    }
+
     function updateChart() {
         var ctx = document.getElementById('bubble-chart').getContext('2d');
         var data = getData();
 
-        var datasets = data.map(function(item) {
+        var datasets = data.map(function(item, index) {
             return {
                 label: item.label,
                 data: [{ x: item.x, y: item.y, r: item.r }],
                 backgroundColor: item.backgroundColor,
                 borderColor: item.borderColor,
-                borderWidth: 2
+                borderWidth: 2,
+                dataIndex: index  // 用于标签位置查找
             };
         });
 
         if (chart) {
             chart.destroy();
         }
+
+        // 重置标签位置缓存和更新标志
+        labelPositionCache = {};
+        var labelPositionsCalculated = false;
 
         chart = new Chart(ctx, {
             type: 'bubble',
@@ -303,6 +505,38 @@
                                 return context.dataset.label + ': (' + d.x + ', ' + d.y + ')';
                             }
                         }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: '#333',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        },
+                        // 无边框样式
+                        backgroundColor: null,
+                        borderColor: null,
+                        borderRadius: 0,
+                        borderWidth: 0,
+                        padding: 0,
+                        // 动态计算锚点和对齐
+                        anchor: function(context) {
+                            var idx = context.dataset.dataIndex;
+                            var pos = labelPositionCache[idx];
+                            return pos ? pos.anchor : 'end';
+                        },
+                        align: function(context) {
+                            var idx = context.dataset.dataIndex;
+                            var pos = labelPositionCache[idx];
+                            return pos ? pos.align : 'right';
+                        },
+                        offset: function(context) {
+                            var r = context.dataset.data[0].r;
+                            return r + 4;  // 标签距离气泡边缘的距离
+                        },
+                        formatter: function(value, context) {
+                            return context.dataset.label;
+                        }
                     }
                 },
                 scales: {
@@ -323,7 +557,21 @@
                         grid: { color: 'rgba(0,0,0,0.05)' }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'labelPositionCalculator',
+                afterLayout: function(chartInstance) {
+                    // 布局完成后计算最优标签位置（只执行一次）
+                    if (!labelPositionsCalculated && chartInstance.scales && chartInstance.scales.x && chartInstance.scales.y) {
+                        labelPositionCache = calculateOptimalLabelPositions(data, chartInstance.scales);
+                        labelPositionsCalculated = true;
+                        // 延迟重绘以应用新位置
+                        setTimeout(function() {
+                            chartInstance.update('none');
+                        }, 0);
+                    }
+                }
+            }]
         });
     }
 

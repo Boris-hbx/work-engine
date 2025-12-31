@@ -1,18 +1,70 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ff6b6b">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Boris Life">
     <title>{% block title %}Boris Life{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+    <script>
+    // 早期执行：在页面渲染前应用主题和侧边栏状态，避免闪烁
+    (function() {
+        var theme = localStorage.getItem('theme');
+        if (theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        // 通过 CSS 类提前标记侧边栏状态
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.documentElement.classList.add('sidebar-will-collapse');
+        }
+    })();
+    </script>
+    <style>
+    /* 防止侧边栏状态切换时闪烁 */
+    html.sidebar-will-collapse .sidebar {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    html.sidebar-will-collapse .main-content {
+        margin-left: 0;
+    }
+    html.sidebar-will-collapse .sidebar-hint {
+        opacity: 1;
+    }
+    </style>
 </head>
 <body>
+    <!-- 粒子动画画布（覆盖顶栏+侧边栏的L形区域） -->
+    <canvas id="header-particles" class="particles-canvas-extended"></canvas>
+
+    <!-- GitHub风格顶部导航栏 -->
+    <header class="top-header" id="top-header">
+        <div class="header-left">
+            <button class="header-menu-btn" id="header-menu-btn" title="菜单">
+                <span class="menu-icon">☰</span>
+            </button>
+            <span class="header-logo" id="header-logo" title="点击设置小球数量" style="cursor:pointer;">⚡</span>
+            <span class="header-title">Boris Life</span>
+        </div>
+        <div class="header-right">
+            <div class="header-avatar" id="header-avatar" onclick="nextAvatarQuote()">
+                <span class="avatar-text">B</span>
+                <div class="avatar-quote-tooltip" id="avatar-quote-tooltip">
+                    <div class="quote-content" id="avatar-quote-content">Loading...</div>
+                    <div class="quote-hint">点击换一句</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <div class="container">
         <!-- 左侧提示条 - 侧边栏收起时显示 -->
         <div class="sidebar-hint" id="sidebar-hint">
@@ -26,31 +78,32 @@
             <div class="pet-eye"></div>
         </div>
 
+
         <!-- Left Sidebar -->
         <nav class="sidebar" id="sidebar">
-            <!-- 头像区域 -->
-            <div class="sidebar-profile">
-                <div class="avatar-wrapper">
-                    <img src="{{ url_for('static', filename='images/avatar.jpg') }}" alt="Boris" class="avatar" width="60" height="60" loading="eager">
-                </div>
-                <span class="profile-name">无与伦比的Boris</span>
-            </div>
-
             <div class="nav-links">
+                <a href="{{ url_for('main') }}" class="nav-link {% if current_page == 'main' %}active{% endif %}">主页</a>
                 <a href="{{ url_for('todo') }}" class="nav-link {% if current_page == 'todo' %}active{% endif %}">Todo</a>
-                <a href="{{ url_for('motivation') }}" class="nav-link {% if current_page == 'motivation' %}active{% endif %}">激励自己</a>
-                <a href="{{ url_for('bubble') }}" class="nav-link {% if current_page == 'bubble' %}active{% endif %}">气泡图工具</a>
+                <a href="{{ url_for('motivation') }}" class="nav-link {% if current_page == 'motivation' %}active{% endif %}">程序员鼓励大师</a>
+                <a href="{{ url_for('toolbox') }}" class="nav-link {% if current_page == 'toolbox' %}active{% endif %}">工具箱</a>
+                <a href="{{ url_for('game') }}" class="nav-link {% if current_page == 'game' %}active{% endif %}">松开你的大脑</a>
+                <a href="{{ url_for('leader') }}" class="nav-link {% if current_page == 'leader' %}active{% endif %}">领袖培训班</a>
+                <a href="{{ url_for('english') }}" class="nav-link {% if current_page == 'english' %}active{% endif %}">英文学习天地</a>
                 <a href="{{ url_for('aichat') }}" class="nav-link ai-link {% if current_page == 'aichat' %}active{% endif %}">
                     <span class="ai-glow"></span>
                     智脑中枢
                 </a>
             </div>
 
-            <!-- 底部区域：prompt日志 + 时区 -->
+            <!-- 底部区域：待执行prompt + prompt历史记录 + 时区 -->
             <div class="sidebar-bottom">
+                <a href="{{ url_for('prompt_todo') }}" class="prompt-log-link {% if current_page == 'prompt_todo' %}active{% endif %}">
+                    <span class="prompt-icon">📋</span>
+                    <span>待执行prompt</span>
+                </a>
                 <a href="{{ url_for('prompts') }}" class="prompt-log-link {% if current_page == 'prompts' %}active{% endif %}">
-                    <span class="prompt-icon">📝</span>
-                    <span>开发prompt日志</span>
+                    <span class="prompt-icon">📜</span>
+                    <span>prompt历史记录</span>
                 </a>
                 <div class="sidebar-divider"></div>
             </div>
@@ -87,7 +140,1240 @@
         </main>
     </div>
 
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="theme-toggle" title="切换主题 (D)">
+        <span class="icon-sun">☀️</span>
+        <span class="icon-moon">🌙</span>
+    </button>
+
+    <!-- Sync Status Indicator -->
+    <div class="sync-status" id="sync-status">
+        <span class="sync-dot"></span>
+        <span class="sync-text">已保存</span>
+    </div>
+
+    <!-- Focus Mode Indicator -->
+    <div class="focus-mode-indicator" id="focus-indicator">
+        🎯 专注模式 · 按 Esc 退出
+    </div>
+
+    <!-- Pomodoro Timer FAB -->
+    <button class="pomodoro-fab" id="pomodoro-fab" title="番茄钟 (P)">🍅</button>
+    <div class="pomodoro-panel" id="pomodoro-panel">
+        <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+        <div class="pomodoro-label" id="pomodoro-label">专注时间</div>
+        <div class="pomodoro-controls">
+            <button class="pomodoro-btn pomodoro-btn-start" id="pomodoro-start">开始</button>
+            <button class="pomodoro-btn pomodoro-btn-reset" id="pomodoro-reset">重置</button>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="shortcuts-modal" id="shortcuts-modal">
+        <div class="shortcuts-content">
+            <div class="shortcuts-title">⌨️ 键盘快捷键</div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>N</kbd></span>
+                <span class="shortcut-desc">新建任务</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>S</kbd></span>
+                <span class="shortcut-desc">搜索任务</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></span>
+                <span class="shortcut-desc">切换标签页</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>D</kbd></span>
+                <span class="shortcut-desc">切换深色模式</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>F</kbd></span>
+                <span class="shortcut-desc">专注模式</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>P</kbd></span>
+                <span class="shortcut-desc">番茄钟</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>?</kbd></span>
+                <span class="shortcut-desc">显示快捷键</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key"><kbd>Esc</kbd></span>
+                <span class="shortcut-desc">关闭弹窗</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gesture Hint -->
+    <div class="gesture-hint" id="gesture-hint"></div>
+
     <script>
+    // ============================================
+    // Global Feature Scripts
+    // ============================================
+
+    // Theme Management
+    (function() {
+        var themeToggle = document.getElementById('theme-toggle');
+        var html = document.documentElement;
+
+        // Load saved theme or detect system preference
+        function initTheme() {
+            var saved = localStorage.getItem('theme');
+            if (saved) {
+                html.setAttribute('data-theme', saved);
+            } else {
+                // Check system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    html.setAttribute('data-theme', 'dark');
+                }
+            }
+        }
+
+        function toggleTheme() {
+            var current = html.getAttribute('data-theme');
+            var newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        initTheme();
+
+        // Expose for keyboard shortcut
+        window.toggleTheme = toggleTheme;
+    })();
+
+    // 头像名言功能
+    (function() {
+        var avatarQuotes = [
+            "代码如诗，优雅而简洁。",
+            "今天的bug，是明天的feature。",
+            "先让它工作，再让它优雅。",
+            "简单是最终的复杂。",
+            "好的代码是自己的最佳文档。",
+            "调试是写代码时没做的事。",
+            "保持学习，保持谦逊。",
+            "一次只做一件事，做到极致。",
+            "软件开发是一场马拉松，不是短跑。",
+            "最好的错误处理是不让错误发生。",
+            "重构是开发者的日常修行。",
+            "测试不是找bug，是证明代码正确。",
+            "代码写给人看，顺便让机器执行。",
+            "永远不要相信用户输入。",
+            "提前优化是万恶之源。",
+            "复制粘贴是技术债的开始。"
+        ];
+        var currentQuoteIndex = Math.floor(Math.random() * avatarQuotes.length);
+        var quoteContent = document.getElementById('avatar-quote-content');
+
+        function updateQuote() {
+            if (quoteContent) {
+                quoteContent.textContent = '"' + avatarQuotes[currentQuoteIndex] + '"';
+            }
+        }
+
+        window.nextAvatarQuote = function() {
+            currentQuoteIndex = (currentQuoteIndex + 1) % avatarQuotes.length;
+            updateQuote();
+        };
+
+        updateQuote();
+    })();
+
+    // Top Header - 滚动隐藏
+    (function() {
+        var header = document.getElementById('top-header');
+        var menuBtn = document.getElementById('header-menu-btn');
+        var lastScrollTop = 0;
+        var scrollThreshold = 60;
+
+        // 滚动时隐藏/显示顶部栏
+        window.addEventListener('scroll', function() {
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > lastScrollTop && scrollTop > scrollThreshold) {
+                // 向下滚动，隐藏
+                header.classList.add('hidden');
+            } else {
+                // 向上滚动或接近顶部，显示
+                header.classList.remove('hidden');
+            }
+
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+        }, { passive: true });
+
+        // 菜单按钮点击 - 切换侧边栏
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function() {
+                var pet = document.getElementById('pet');
+                if (pet) pet.click();
+            });
+        }
+    })();
+
+    // Header Particles Animation (完整版：尾巴+排斥+恐惧+爆炸+汇合+侧边栏贯通)
+    (function() {
+        var canvas = document.getElementById('header-particles');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var header = document.getElementById('top-header');
+        var sidebar = document.getElementById('sidebar');
+        var logo = document.getElementById('header-logo');
+
+        // 区域配置 - L形区域：顶栏全宽 + 侧边栏
+        var headerHeight = 48;
+        var sidebarWidth = 220;
+
+        // 粒子配置
+        var particles = [];
+        var fragments = []; // 爆炸碎片
+        var fishes = []; // 小鱼
+        var fishFragments = []; // 小鱼碎片
+        var particleCount = parseInt(localStorage.getItem('particleCount')) || 6;
+        var fishCount = parseInt(localStorage.getItem('fishCount')) || 3;
+        var maxTailLength = 12; // 缩短尾巴最大长度
+        var colors = ['#60a5fa', '#34d399', '#f87171', '#fbbf24', '#a78bfa', '#f472b6'];
+        var fishColors = ['#ff9966', '#66ccff', '#99ff99']; // 小鱼颜色
+
+        // 鼠标位置
+        var mouse = { x: -1000, y: -1000 };
+        var mouseRepelRadius = 100;
+        var mouseRepelForce = 4;
+
+        // 恐惧与爆炸配置
+        var fearThreshold = 60; // 开始震动的帧数
+        var explodeThreshold = 150; // 爆炸的帧数
+        var reuniteDelay = 120; // 汇合延迟帧数
+
+        function resizeCanvas() {
+            // 全屏宽度以支持L形区域
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // 检查点是否在L形区域内
+        function isInLShape(x, y) {
+            return y <= headerHeight || x <= sidebarWidth;
+        }
+
+        // 获取L形区域的有效边界
+        function getLShapeBounds(y) {
+            if (y <= headerHeight) {
+                return { minX: 0, maxX: canvas.width };
+            } else {
+                return { minX: 0, maxX: sidebarWidth };
+            }
+        }
+
+        function createParticle(index, x, y, radius) {
+            var baseAngle = Math.random() < 0.5 ? 0 : Math.PI;
+            var angle = baseAngle + (Math.random() - 0.5) * Math.PI / 3;
+            var speed = 0.3 + Math.random() * 0.3;
+            // 大部分粒子生成在顶栏区域（80%概率）
+            var spawnInHeader = Math.random() < 0.8;
+            var spawnX = x !== undefined ? x : (spawnInHeader ? Math.random() * canvas.width : Math.random() * sidebarWidth);
+            var spawnY = y !== undefined ? y : (spawnInHeader ? Math.random() * headerHeight : headerHeight + Math.random() * (canvas.height - headerHeight));
+            return {
+                x: spawnX, y: spawnY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: radius || (4 + Math.random() * 3),
+                color: colors[index % colors.length],
+                alpha: 0.7 + Math.random() * 0.2,
+                trail: [],
+                stuckTime: 0,
+                isShaking: false,
+                shakeOffset: { x: 0, y: 0 },
+                targetAngle: angle,
+                turnSpeed: 0.015 + Math.random() * 0.015,
+                nextTurnTime: 100 + Math.floor(Math.random() * 150)
+            };
+        }
+
+        function initParticles() {
+            particles = [];
+            fragments = [];
+            fishes = [];
+            fishFragments = [];
+            for (var i = 0; i < particleCount; i++) {
+                particles.push(createParticle(i));
+            }
+            for (var i = 0; i < fishCount; i++) {
+                fishes.push(createFish(i));
+            }
+        }
+
+        function createFish(index, x, y, size) {
+            var direction = Math.random() < 0.5 ? 1 : -1;
+            var facingAngle = direction > 0 ? 0 : Math.PI;
+            var spawnInHeader = Math.random() < 0.8;
+            var spawnX = x !== undefined ? x : (spawnInHeader ? Math.random() * canvas.width : Math.random() * sidebarWidth);
+            var spawnY = y !== undefined ? y : (spawnInHeader ? 8 + Math.random() * (headerHeight - 16) : headerHeight + Math.random() * (canvas.height - headerHeight - 16));
+            var fishSize = size || (6 + Math.random() * 3);
+            return {
+                x: spawnX, y: spawnY,
+                vx: direction * (0.4 + Math.random() * 0.3),
+                vy: (Math.random() - 0.5) * 0.1,
+                size: fishSize,
+                color: fishColors[index % fishColors.length],
+                tailPhase: Math.random() * Math.PI * 2,
+                direction: direction,
+                facingAngle: facingAngle,
+                angle: facingAngle,
+                backwardTime: 0,
+                turnSpeed: 0.15,
+                isEscaping: false,
+                escapePhase: 0,
+                stuckTime: 0,
+                isShaking: false,
+                shakeOffset: { x: 0, y: 0 }
+            };
+        }
+
+        function normalizeAngle(angle) {
+            while (angle > Math.PI) angle -= Math.PI * 2;
+            while (angle < -Math.PI) angle += Math.PI * 2;
+            return angle;
+        }
+
+        // 检测鱼是否被困
+        function isFishStuckAtEdge(f) {
+            var edgeMargin = f.size + 5;
+            var bounds = getLShapeBounds(f.y);
+            var nearEdge = f.x < edgeMargin || f.x > bounds.maxX - edgeMargin ||
+                           f.y < edgeMargin || f.y > canvas.height - edgeMargin;
+            var dx = f.x - mouse.x;
+            var dy = f.y - mouse.y;
+            var nearMouse = Math.sqrt(dx * dx + dy * dy) < mouseRepelRadius + 20;
+            return nearEdge && nearMouse;
+        }
+
+        // 小鱼爆炸
+        function explodeFish(f, index) {
+            for (var i = 0; i < 3; i++) {
+                var angle = (Math.PI * 2 / 3) * i + Math.random() * 0.5;
+                var speed = 2 + Math.random() * 1.5;
+                fishFragments.push({
+                    x: f.x, y: f.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: f.size * 0.5,
+                    color: f.color,
+                    tailPhase: Math.random() * Math.PI * 2,
+                    angle: angle,
+                    life: reuniteDelay,
+                    parentIndex: index,
+                    ignoreMouseTime: 40
+                });
+            }
+            fishes.splice(index, 1);
+        }
+
+        // 小鱼汇合
+        function reuniteFishFragments() {
+            var groups = {};
+            fishFragments.forEach(function(f, i) {
+                if (!groups[f.parentIndex]) groups[f.parentIndex] = [];
+                groups[f.parentIndex].push({ fragment: f, index: i });
+            });
+            var toRemove = [];
+            for (var parentIndex in groups) {
+                var group = groups[parentIndex];
+                if (group.length > 0 && group[0].fragment.life <= 0) {
+                    var cx = 0, cy = 0;
+                    group.forEach(function(g) { cx += g.fragment.x; cy += g.fragment.y; });
+                    cx /= group.length; cy /= group.length;
+                    var newFish = createFish(parseInt(parentIndex), cx, cy);
+                    newFish.vx = (Math.random() - 0.5) * 1.5;
+                    newFish.vy = (Math.random() - 0.5) * 1.5;
+                    fishes.push(newFish);
+                    group.forEach(function(g) { toRemove.push(g.index); });
+                }
+            }
+            toRemove.sort(function(a, b) { return b - a; });
+            toRemove.forEach(function(i) { fishFragments.splice(i, 1); });
+        }
+
+        function updateFish(f, index) {
+            f.tailPhase += 0.15;
+            var dx = f.x - mouse.x;
+            var dy = f.y - mouse.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var escapeAngle = Math.atan2(dy, dx);
+            var velocityAngle = Math.atan2(f.vy, f.vx);
+
+            // 鼠标排斥与智能逃逸
+            if (dist < mouseRepelRadius && dist > 0) {
+                f.isEscaping = true;
+                var angleDiff = normalizeAngle(escapeAngle - f.facingAngle);
+                var isFacingAway = Math.abs(angleDiff) < Math.PI / 2;
+
+                if (isFacingAway) {
+                    f.escapePhase = 0;
+                    var force = (mouseRepelRadius - dist) / mouseRepelRadius * 6;
+                    f.vx += (dx / dist) * force;
+                    f.vy += (dy / dist) * force;
+                } else {
+                    if (f.escapePhase === 0) {
+                        f.escapePhase = 1;
+                        f.backwardTime = 0;
+                    }
+                    if (f.escapePhase === 1) {
+                        f.backwardTime++;
+                        var backwardForce = (mouseRepelRadius - dist) / mouseRepelRadius * 3;
+                        f.vx += (dx / dist) * backwardForce;
+                        f.vy += (dy / dist) * backwardForce;
+                        if (f.backwardTime > 15 || dist < mouseRepelRadius * 0.5) {
+                            f.escapePhase = 2;
+                        }
+                    }
+                    if (f.escapePhase === 2) {
+                        var turnAmount = normalizeAngle(escapeAngle - f.facingAngle) * 0.3;
+                        f.facingAngle = normalizeAngle(f.facingAngle + turnAmount);
+                        var force = (mouseRepelRadius - dist) / mouseRepelRadius * 5;
+                        f.vx += (dx / dist) * force;
+                        f.vy += (dy / dist) * force;
+                        if (Math.abs(normalizeAngle(escapeAngle - f.facingAngle)) < Math.PI / 4) {
+                            f.escapePhase = 0;
+                        }
+                    }
+                }
+            } else {
+                f.isEscaping = false;
+                f.escapePhase = 0;
+                f.backwardTime = 0;
+            }
+
+            if (isFishStuckAtEdge(f)) {
+                f.stuckTime++;
+                if (f.stuckTime > fearThreshold) {
+                    f.isShaking = true;
+                    f.shakeOffset = { x: (Math.random() - 0.5) * 3, y: (Math.random() - 0.5) * 3 };
+                }
+                if (f.stuckTime > explodeThreshold) {
+                    explodeFish(f, index);
+                    return false;
+                }
+            } else {
+                f.stuckTime = Math.max(0, f.stuckTime - 2);
+                f.isShaking = false;
+                f.shakeOffset = { x: 0, y: 0 };
+            }
+
+            var inHeader = f.y <= headerHeight;
+            if (inHeader) {
+                f.vy += (Math.random() - 0.5) * 0.02;
+                f.vy *= 0.95;
+            } else {
+                f.vx += (Math.random() - 0.5) * 0.03;
+                f.vy += (Math.random() - 0.5) * 0.03;
+            }
+            f.x += f.vx;
+            f.y += f.vy;
+
+            var speed = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
+            if (speed < 0.3) {
+                var angle = inHeader ? (Math.random() < 0.5 ? 0 : Math.PI) : Math.random() * Math.PI * 2;
+                f.vx = Math.cos(angle) * 0.5;
+                f.vy = Math.sin(angle) * 0.5;
+            }
+            var maxSpeed = 4;
+            if (speed > maxSpeed) {
+                f.vx = (f.vx / speed) * maxSpeed;
+                f.vy = (f.vy / speed) * maxSpeed;
+            }
+            f.vx *= 0.995;
+            f.vy *= 0.995;
+
+            // L形拐角处理
+            if (f.y > headerHeight && f.x > sidebarWidth - f.size) {
+                var overY = f.y - headerHeight;
+                var overX = f.x - (sidebarWidth - f.size);
+                if (overY < overX) {
+                    f.y = headerHeight - f.size;
+                    f.vy = -Math.abs(f.vy);
+                } else {
+                    f.x = sidebarWidth - f.size;
+                    f.vx = -Math.abs(f.vx);
+                }
+            }
+            var bounds = getLShapeBounds(f.y);
+            if (f.x < f.size) { f.x = f.size; f.vx = Math.abs(f.vx); }
+            else if (f.x > bounds.maxX - f.size) { f.x = bounds.maxX - f.size; f.vx = -Math.abs(f.vx); }
+            if (f.y < f.size) { f.y = f.size; f.vy = Math.abs(f.vy); }
+            else if (f.y > canvas.height - f.size) { f.y = canvas.height - f.size; f.vy = -Math.abs(f.vy); }
+
+            // 更新鱼头朝向
+            velocityAngle = Math.atan2(f.vy, f.vx);
+            if (!f.isEscaping || f.escapePhase === 0) {
+                var targetAngle = velocityAngle;
+                var angleDiff = normalizeAngle(targetAngle - f.facingAngle);
+                var isBackward = Math.abs(angleDiff) > Math.PI / 2;
+                if (isBackward) {
+                    f.backwardTime++;
+                    if (f.backwardTime > 30) {
+                        f.facingAngle = normalizeAngle(f.facingAngle + angleDiff * 0.2);
+                    }
+                } else {
+                    f.backwardTime = Math.max(0, f.backwardTime - 1);
+                    f.facingAngle = normalizeAngle(f.facingAngle + angleDiff * f.turnSpeed);
+                }
+            }
+
+            f.angle = f.facingAngle;
+            f.direction = Math.cos(f.angle) >= 0 ? 1 : -1;
+            return true;
+        }
+
+        function updateFishFragment(ff) {
+            ff.tailPhase += 0.2;
+            if (ff.ignoreMouseTime > 0) ff.ignoreMouseTime--;
+            else {
+                var dx = ff.x - mouse.x;
+                var dy = ff.y - mouse.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < mouseRepelRadius && dist > 0) {
+                    var force = (mouseRepelRadius - dist) / mouseRepelRadius * 0.5;
+                    ff.vx += (dx / dist) * force;
+                    ff.vy += (dy / dist) * force;
+                }
+            }
+            ff.vx *= 0.98; ff.vy *= 0.98;
+            ff.x += ff.vx; ff.y += ff.vy;
+            ff.life--;
+            ff.angle = Math.atan2(ff.vy, ff.vx);
+            // L形拐角处理
+            if (ff.y > headerHeight && ff.x > sidebarWidth - ff.size) {
+                var overY = ff.y - headerHeight;
+                var overX = ff.x - (sidebarWidth - ff.size);
+                if (overY < overX) {
+                    ff.y = headerHeight - ff.size;
+                    ff.vy = -Math.abs(ff.vy);
+                } else {
+                    ff.x = sidebarWidth - ff.size;
+                    ff.vx = -Math.abs(ff.vx);
+                }
+            }
+            var bounds = getLShapeBounds(ff.y);
+            if (ff.x < ff.size || ff.x > bounds.maxX - ff.size) {
+                ff.vx = -ff.vx;
+                ff.x = Math.max(ff.size, Math.min(bounds.maxX - ff.size, ff.x));
+            }
+            if (ff.y < ff.size || ff.y > canvas.height - ff.size) {
+                ff.vy = -ff.vy;
+                ff.y = Math.max(ff.size, Math.min(canvas.height - ff.size, ff.y));
+            }
+        }
+
+        function drawFish(f) {
+            var transMult = getTransparencyMultiplier(f.y);
+            var drawX = f.x + (f.shakeOffset ? f.shakeOffset.x : 0);
+            var drawY = f.y + (f.shakeOffset ? f.shakeOffset.y : 0);
+            ctx.save();
+            ctx.translate(drawX, drawY);
+            var angle = f.angle || 0;
+            var flipY = Math.abs(angle) > Math.PI / 2;
+            if (flipY) { ctx.rotate(angle + Math.PI); ctx.scale(1, -1); }
+            else { ctx.rotate(angle); }
+            var s = f.size;
+            var tailSwing = Math.sin(f.tailPhase) * 0.3;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, s * 1.2, s * 0.6, 0, 0, Math.PI * 2);
+            ctx.fillStyle = f.color;
+            ctx.globalAlpha = 0.85 * transMult;
+            if (f.isShaking) { ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 15; }
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.moveTo(-s * 1.1, 0);
+            ctx.lineTo(-s * 2, -s * 0.5 + tailSwing * s);
+            ctx.lineTo(-s * 2, s * 0.5 + tailSwing * s);
+            ctx.closePath();
+            ctx.fillStyle = f.color;
+            ctx.globalAlpha = 0.7 * transMult;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.5, -s * 0.1, s * 0.15, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 1 * transMult;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.55, -s * 0.1, s * 0.08, 0, Math.PI * 2);
+            ctx.fillStyle = '#333333';
+            ctx.fill();
+            ctx.restore();
+            ctx.globalAlpha = 1;
+        }
+
+        function drawFishFragment(ff) {
+            var transMult = getTransparencyMultiplier(ff.y) * (ff.life / reuniteDelay);
+            ctx.save();
+            ctx.translate(ff.x, ff.y);
+            var angle = ff.angle || 0;
+            var flipY = Math.abs(angle) > Math.PI / 2;
+            if (flipY) { ctx.rotate(angle + Math.PI); ctx.scale(1, -1); }
+            else { ctx.rotate(angle); }
+            var s = ff.size;
+            var tailSwing = Math.sin(ff.tailPhase) * 0.4;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, s * 1.2, s * 0.6, 0, 0, Math.PI * 2);
+            ctx.fillStyle = ff.color;
+            ctx.globalAlpha = 0.8 * transMult;
+            ctx.shadowColor = ff.color;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.moveTo(-s * 1.1, 0);
+            ctx.lineTo(-s * 2, -s * 0.5 + tailSwing * s);
+            ctx.lineTo(-s * 2, s * 0.5 + tailSwing * s);
+            ctx.closePath();
+            ctx.globalAlpha = 0.6 * transMult;
+            ctx.fill();
+            ctx.restore();
+            ctx.globalAlpha = 1;
+        }
+
+        function isStuckAtEdge(p) {
+            var edgeMargin = p.radius + 5;
+            var bounds = getLShapeBounds(p.y);
+            var nearEdge = p.x < edgeMargin || p.x > bounds.maxX - edgeMargin ||
+                           p.y < edgeMargin || p.y > canvas.height - edgeMargin;
+            var dx = p.x - mouse.x;
+            var dy = p.y - mouse.y;
+            var nearMouse = Math.sqrt(dx * dx + dy * dy) < mouseRepelRadius + 20;
+            return nearEdge && nearMouse;
+        }
+
+        // 爆炸分裂
+        function explodeParticle(p, index) {
+            var fragmentColors = [colors[(index) % colors.length], colors[(index + 2) % colors.length], colors[(index + 4) % colors.length]];
+            for (var i = 0; i < 3; i++) {
+                var angle = (Math.PI * 2 / 3) * i + Math.random() * 0.5;
+                var speed = 3 + Math.random() * 2;
+                fragments.push({
+                    x: p.x,
+                    y: p.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: p.radius * 0.5,
+                    color: fragmentColors[i],
+                    alpha: 0.9,
+                    trail: [],
+                    life: reuniteDelay,
+                    parentIndex: index,
+                    ignoreMouseTime: 40 // 无视鼠标的时间
+                });
+            }
+            // 移除原粒子
+            particles.splice(index, 1);
+        }
+
+        // 碎片汇合重组
+        function reuniteFragments() {
+            var groups = {};
+            fragments.forEach(function(f, i) {
+                if (!groups[f.parentIndex]) groups[f.parentIndex] = [];
+                groups[f.parentIndex].push({ fragment: f, index: i });
+            });
+
+            var toRemove = [];
+            for (var parentIndex in groups) {
+                var group = groups[parentIndex];
+                if (group.length > 0 && group[0].fragment.life <= 0) {
+                    // 计算汇合中心
+                    var cx = 0, cy = 0;
+                    group.forEach(function(g) { cx += g.fragment.x; cy += g.fragment.y; });
+                    cx /= group.length;
+                    cy /= group.length;
+
+                    // 创建新粒子
+                    var newP = createParticle(parseInt(parentIndex), cx, cy);
+                    newP.vx = (Math.random() - 0.5) * 2;
+                    newP.vy = (Math.random() - 0.5) * 2;
+                    particles.push(newP);
+
+                    // 标记移除碎片
+                    group.forEach(function(g) { toRemove.push(g.index); });
+                }
+            }
+            // 从后往前移除
+            toRemove.sort(function(a, b) { return b - a; });
+            toRemove.forEach(function(i) { fragments.splice(i, 1); });
+        }
+
+        function updateParticle(p, index) {
+            // 计算当前速度
+            var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+
+            // 尾巴长度：基础长度 + 速度加成
+            var dynamicTailLength = Math.floor(5 + speed * 2);
+            dynamicTailLength = Math.max(5, Math.min(maxTailLength, dynamicTailLength));
+
+            p.trail.push({ x: p.x, y: p.y });
+            while (p.trail.length > dynamicTailLength) p.trail.shift();
+
+            // 检测是否被困
+            if (isStuckAtEdge(p)) {
+                p.stuckTime++;
+                if (p.stuckTime > fearThreshold) {
+                    p.isShaking = true;
+                    p.shakeOffset.x = (Math.random() - 0.5) * 3;
+                    p.shakeOffset.y = (Math.random() - 0.5) * 3;
+                }
+                if (p.stuckTime > explodeThreshold) {
+                    explodeParticle(p, index);
+                    return false; // 粒子已移除
+                }
+            } else {
+                p.stuckTime = Math.max(0, p.stuckTime - 2);
+                p.isShaking = false;
+                p.shakeOffset.x = 0;
+                p.shakeOffset.y = 0;
+            }
+
+            // 鼠标排斥（小球快速逃逸）
+            var dx = p.x - mouse.x;
+            var dy = p.y - mouse.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var isEscaping = dist < mouseRepelRadius && dist > 0;
+
+            if (isEscaping) {
+                var force = (mouseRepelRadius - dist) / mouseRepelRadius * 10; // 大幅增强逃逸力度
+                p.vx += (dx / dist) * force;
+                p.vy += (dy / dist) * force;
+            }
+
+            var inHeader = p.y <= headerHeight;
+
+            // 只在非逃逸时进行平滑转向
+            if (!isEscaping) {
+                p.nextTurnTime--;
+                if (p.nextTurnTime <= 0) {
+                    var currentAngle = Math.atan2(p.vy, p.vx);
+                    if (inHeader) {
+                        if (Math.random() < 0.7) {
+                            var baseAngle = Math.cos(currentAngle) > 0 ? 0 : Math.PI;
+                            if (Math.random() < 0.15) baseAngle += Math.PI;
+                            p.targetAngle = baseAngle + (Math.random() - 0.5) * Math.PI / 3;
+                        } else {
+                            p.targetAngle = currentAngle + (Math.random() - 0.5) * Math.PI * 0.4;
+                        }
+                    } else {
+                        p.targetAngle = Math.random() * Math.PI * 2;
+                    }
+                    p.nextTurnTime = 80 + Math.floor(Math.random() * 120);
+                }
+
+                var currentAngle = Math.atan2(p.vy, p.vx);
+                var angleDiff = p.targetAngle - currentAngle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                if (Math.abs(angleDiff) > 0.01) {
+                    var newAngle = currentAngle + angleDiff * p.turnSpeed;
+                    var targetSpeed = 0.4 + Math.random() * 0.3;
+                    p.vx = Math.cos(newAngle) * Math.max(speed, targetSpeed);
+                    p.vy = Math.sin(newAngle) * Math.max(speed, targetSpeed);
+                }
+            }
+
+            if (inHeader) p.vy *= 0.95;
+
+            // 速度规则
+            speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+            var maxSpeed = 5, minSpeed = 0.3; // 提高最大速度到5
+            if (speed > maxSpeed) {
+                p.vx = (p.vx / speed) * maxSpeed;
+                p.vy = (p.vy / speed) * maxSpeed;
+            } else if (speed < minSpeed) {
+                var angle = inHeader ? (Math.random() < 0.5 ? 0 : Math.PI) : Math.random() * Math.PI * 2;
+                p.vx = Math.cos(angle) * 0.5;
+                p.vy = Math.sin(angle) * 0.5;
+            }
+
+            p.vx *= 0.995; // 与小鱼一致
+            p.vy *= 0.995;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // L形边缘平滑反弹
+            var bounced = false;
+
+            // 首先处理L形拐角：检测是否进入禁区（y > headerHeight 且 x > sidebarWidth）
+            if (p.y > headerHeight && p.x > sidebarWidth - p.radius) {
+                var overY = p.y - headerHeight;
+                var overX = p.x - (sidebarWidth - p.radius);
+                if (overY < overX) {
+                    p.y = headerHeight - p.radius;
+                    p.vy = -Math.abs(p.vy);
+                } else {
+                    p.x = sidebarWidth - p.radius;
+                    p.vx = -Math.abs(p.vx);
+                }
+                bounced = true;
+            }
+
+            // 常规边界检查
+            var bounds = getLShapeBounds(p.y);
+            if (p.x - p.radius < 0) {
+                p.x = p.radius;
+                p.vx = Math.abs(p.vx);
+                bounced = true;
+            } else if (p.x + p.radius > bounds.maxX) {
+                p.x = bounds.maxX - p.radius;
+                p.vx = -Math.abs(p.vx);
+                bounced = true;
+            }
+            if (p.y - p.radius < 0) {
+                p.y = p.radius;
+                p.vy = Math.abs(p.vy);
+                bounced = true;
+            } else if (p.y + p.radius > canvas.height) {
+                p.y = canvas.height - p.radius;
+                p.vy = -Math.abs(p.vy);
+                bounced = true;
+            }
+            if (bounced) {
+                p.targetAngle = Math.atan2(p.vy, p.vx);
+            }
+
+            return true;
+        }
+
+        function updateFragment(f) {
+            f.trail.push({ x: f.x, y: f.y });
+            if (f.trail.length > 8) f.trail.shift();
+
+            if (f.ignoreMouseTime > 0) {
+                f.ignoreMouseTime--;
+            } else {
+                var dx = f.x - mouse.x;
+                var dy = f.y - mouse.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < mouseRepelRadius && dist > 0) {
+                    var force = (mouseRepelRadius - dist) / mouseRepelRadius * 0.5;
+                    f.vx += (dx / dist) * force;
+                    f.vy += (dy / dist) * force;
+                }
+            }
+
+            f.vx *= 0.98;
+            f.vy *= 0.98;
+            f.x += f.vx;
+            f.y += f.vy;
+            f.life--;
+
+            // L形拐角处理
+            if (f.y > headerHeight && f.x > sidebarWidth - f.radius) {
+                var overY = f.y - headerHeight;
+                var overX = f.x - (sidebarWidth - f.radius);
+                if (overY < overX) {
+                    f.y = headerHeight - f.radius;
+                    f.vy = -Math.abs(f.vy);
+                } else {
+                    f.x = sidebarWidth - f.radius;
+                    f.vx = -Math.abs(f.vx);
+                }
+            }
+
+            // L形边界
+            var bounds = getLShapeBounds(f.y);
+            if (f.x - f.radius < 0 || f.x + f.radius > bounds.maxX) {
+                f.vx = -f.vx;
+                f.x = Math.max(f.radius, Math.min(bounds.maxX - f.radius, f.x));
+            }
+            if (f.y - f.radius < 0 || f.y + f.radius > canvas.height) {
+                f.vy = -f.vy;
+                f.y = Math.max(f.radius, Math.min(canvas.height - f.radius, f.y));
+            }
+        }
+
+        // 计算透明度系数（在侧边栏区域时变透明）
+        function getTransparencyMultiplier(y) {
+            if (y <= headerHeight) return 1; // 顶栏区域：完全不透明
+            // 侧边栏区域：渐变到50%透明
+            var fadeStart = headerHeight;
+            var fadeEnd = headerHeight + 50;
+            if (y < fadeEnd) {
+                return 1 - 0.5 * ((y - fadeStart) / (fadeEnd - fadeStart));
+            }
+            return 0.5; // 侧边栏深处：50%透明
+        }
+
+        function drawParticle(p) {
+            var drawX = p.x + (p.shakeOffset ? p.shakeOffset.x : 0);
+            var drawY = p.y + (p.shakeOffset ? p.shakeOffset.y : 0);
+            var transMult = getTransparencyMultiplier(drawY);
+
+            // 彗星尾巴效果：从头部向尾部逐渐变小变淡
+            if (p.trail.length > 1) {
+                for (var i = 0; i < p.trail.length; i++) {
+                    var t = p.trail[i];
+                    var progress = (i + 1) / p.trail.length; // 0→1，尾部是0，头部是1
+                    var trailTrans = getTransparencyMultiplier(t.y);
+                    var size = p.radius * progress * 0.8; // 尾部小，头部大
+                    var alpha = p.alpha * progress * progress * 0.5; // 尾部淡，头部亮
+                    ctx.beginPath();
+                    ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = alpha * trailTrans;
+                    ctx.fill();
+                }
+            }
+
+            // 主球体（震动时带红色光晕）
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.alpha * transMult;
+            ctx.shadowColor = p.isShaking ? '#ff0000' : p.color;
+            ctx.shadowBlur = p.isShaking ? 15 : 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+        }
+
+        function drawFragment(f) {
+            var transMult = getTransparencyMultiplier(f.y);
+            // 尾巴
+            for (var i = 0; i < f.trail.length; i++) {
+                var t = f.trail[i];
+                var progress = i / f.trail.length;
+                var trailTrans = getTransparencyMultiplier(t.y);
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, f.radius * progress * 0.6, 0, Math.PI * 2);
+                ctx.fillStyle = f.color;
+                ctx.globalAlpha = f.alpha * progress * 0.4 * trailTrans;
+                ctx.fill();
+            }
+            // 碎片
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+            ctx.fillStyle = f.color;
+            ctx.globalAlpha = f.alpha * (f.life / reuniteDelay) * transMult;
+            ctx.shadowColor = f.color;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新并绘制小鱼（倒序遍历以便安全删除）
+            for (var i = fishes.length - 1; i >= 0; i--) {
+                if (updateFish(fishes[i], i)) {
+                    drawFish(fishes[i]);
+                }
+            }
+
+            // 更新并绘制小鱼碎片
+            fishFragments.forEach(function(ff) {
+                updateFishFragment(ff);
+                drawFishFragment(ff);
+            });
+
+            // 检查小鱼汇合
+            reuniteFishFragments();
+
+            // 更新并绘制粒子（倒序遍历以便安全删除）
+            for (var i = particles.length - 1; i >= 0; i--) {
+                if (updateParticle(particles[i], i)) {
+                    drawParticle(particles[i]);
+                }
+            }
+
+            // 更新并绘制碎片
+            fragments.forEach(function(f) {
+                updateFragment(f);
+                drawFragment(f);
+            });
+
+            // 检查汇合
+            reuniteFragments();
+
+            requestAnimationFrame(animate);
+        }
+
+        resizeCanvas();
+        initParticles();
+        animate();
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // 鼠标追踪：在L形区域（顶栏全宽 + 侧边栏）内生效
+        document.addEventListener('mousemove', function(e) {
+            var inLShape = (e.clientY <= headerHeight) || (e.clientX <= sidebarWidth);
+            if (inLShape) {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            } else {
+                mouse.x = -1000;
+                mouse.y = -1000;
+            }
+        });
+
+        document.addEventListener('mouseleave', function() {
+            mouse.x = -1000;
+            mouse.y = -1000;
+        });
+
+        // 闪电点击设置小球和小鱼数量
+        if (logo) {
+            logo.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var input = prompt('设置小球数量 (1-20)，当前: ' + particleCount, particleCount);
+                if (input !== null) {
+                    var num = parseInt(input);
+                    if (!isNaN(num) && num >= 1 && num <= 20) {
+                        particleCount = num;
+                        localStorage.setItem('particleCount', num);
+                    }
+                }
+                var fishInput = prompt('设置小鱼数量 (1-10)，当前: ' + fishCount, fishCount);
+                if (fishInput !== null) {
+                    var fishNum = parseInt(fishInput);
+                    if (!isNaN(fishNum) && fishNum >= 1 && fishNum <= 10) {
+                        fishCount = fishNum;
+                        localStorage.setItem('fishCount', fishNum);
+                    }
+                }
+                initParticles();
+            });
+        }
+    })();
+
+    // Sync Status Indicator
+    (function() {
+        var syncStatus = document.getElementById('sync-status');
+        var syncText = syncStatus.querySelector('.sync-text');
+        var hideTimeout = null;
+
+        window.showSyncStatus = function(status, message) {
+            syncStatus.className = 'sync-status visible ' + status;
+            syncText.textContent = message || (status === 'syncing' ? '保存中...' : status === 'synced' ? '已保存' : '保存失败');
+
+            if (hideTimeout) clearTimeout(hideTimeout);
+            if (status !== 'syncing') {
+                hideTimeout = setTimeout(function() {
+                    syncStatus.classList.remove('visible');
+                }, 2000);
+            }
+        };
+    })();
+
+    // Pomodoro Timer
+    (function() {
+        var fab = document.getElementById('pomodoro-fab');
+        var panel = document.getElementById('pomodoro-panel');
+        var timeDisplay = document.getElementById('pomodoro-time');
+        var labelDisplay = document.getElementById('pomodoro-label');
+        var startBtn = document.getElementById('pomodoro-start');
+        var resetBtn = document.getElementById('pomodoro-reset');
+
+        var WORK_TIME = 25 * 60;
+        var BREAK_TIME = 5 * 60;
+        var timeLeft = WORK_TIME;
+        var isRunning = false;
+        var isBreak = false;
+        var interval = null;
+
+        function formatTime(seconds) {
+            var m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            var s = (seconds % 60).toString().padStart(2, '0');
+            return m + ':' + s;
+        }
+
+        function updateDisplay() {
+            timeDisplay.textContent = formatTime(timeLeft);
+            labelDisplay.textContent = isBreak ? '休息时间' : '专注时间';
+            fab.classList.toggle('active', isRunning);
+        }
+
+        function tick() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                updateDisplay();
+            } else {
+                // Timer finished
+                clearInterval(interval);
+                isRunning = false;
+
+                // Notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(isBreak ? '休息结束！' : '专注时间结束！', {
+                        body: isBreak ? '开始新一轮专注吧' : '休息一下吧',
+                        icon: '/assets/icons/icon-192.png'
+                    });
+                }
+
+                // Vibrate if supported
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+                // Switch mode
+                isBreak = !isBreak;
+                timeLeft = isBreak ? BREAK_TIME : WORK_TIME;
+                updateDisplay();
+                startBtn.textContent = '开始';
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(interval);
+                isRunning = false;
+                startBtn.textContent = '继续';
+            } else {
+                interval = setInterval(tick, 1000);
+                isRunning = true;
+                startBtn.textContent = '暂停';
+            }
+            updateDisplay();
+        }
+
+        function resetTimer() {
+            clearInterval(interval);
+            isRunning = false;
+            isBreak = false;
+            timeLeft = WORK_TIME;
+            startBtn.textContent = '开始';
+            updateDisplay();
+        }
+
+        fab.addEventListener('click', function() {
+            panel.classList.toggle('visible');
+        });
+
+        startBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        updateDisplay();
+
+        // Expose for keyboard shortcut
+        window.togglePomodoro = function() {
+            panel.classList.toggle('visible');
+        };
+    })();
+
+    // Focus Mode
+    (function() {
+        window.toggleFocusMode = function() {
+            document.body.classList.toggle('focus-mode');
+        };
+    })();
+
+    // Keyboard Shortcuts
+    (function() {
+        var shortcutsModal = document.getElementById('shortcuts-modal');
+
+        function isInputFocused() {
+            var active = document.activeElement;
+            return active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            // Ignore if typing in input
+            if (isInputFocused() && e.key !== 'Escape') return;
+
+            switch(e.key.toLowerCase()) {
+                case 'n':
+                    e.preventDefault();
+                    if (typeof showAddModal === 'function') showAddModal();
+                    break;
+                case 's':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        var searchInput = document.getElementById('search-input');
+                        if (searchInput) searchInput.focus();
+                    }
+                    break;
+                case '1':
+                    e.preventDefault();
+                    if (typeof switchTab === 'function') switchTab('today');
+                    break;
+                case '2':
+                    e.preventDefault();
+                    if (typeof switchTab === 'function') switchTab('week');
+                    break;
+                case '3':
+                    e.preventDefault();
+                    if (typeof switchTab === 'function') switchTab('month');
+                    break;
+                case 'd':
+                    e.preventDefault();
+                    if (typeof toggleTheme === 'function') toggleTheme();
+                    break;
+                case 'f':
+                    e.preventDefault();
+                    if (typeof toggleFocusMode === 'function') toggleFocusMode();
+                    break;
+                case 'p':
+                    e.preventDefault();
+                    if (typeof togglePomodoro === 'function') togglePomodoro();
+                    break;
+                case '?':
+                    e.preventDefault();
+                    shortcutsModal.classList.toggle('visible');
+                    break;
+                case 'escape':
+                    // Close any open modal
+                    shortcutsModal.classList.remove('visible');
+                    document.body.classList.remove('focus-mode');
+                    var addModal = document.getElementById('add-modal');
+                    if (addModal) addModal.style.display = 'none';
+                    break;
+            }
+        });
+
+        // Close shortcuts modal on click outside
+        shortcutsModal.addEventListener('click', function(e) {
+            if (e.target === shortcutsModal) {
+                shortcutsModal.classList.remove('visible');
+            }
+        });
+    })();
+
+    // Enhanced API wrapper with sync status
+    (function() {
+        var originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            // Only track mutating requests
+            var method = options && options.method ? options.method.toUpperCase() : 'GET';
+            var isMutating = ['POST', 'PUT', 'DELETE', 'PATCH'].indexOf(method) >= 0;
+
+            if (isMutating && typeof showSyncStatus === 'function') {
+                showSyncStatus('syncing');
+            }
+
+            return originalFetch.apply(this, arguments)
+                .then(function(response) {
+                    if (isMutating && typeof showSyncStatus === 'function') {
+                        showSyncStatus(response.ok ? 'synced' : 'error');
+                    }
+                    return response;
+                })
+                .catch(function(error) {
+                    if (isMutating && typeof showSyncStatus === 'function') {
+                        showSyncStatus('error', '网络错误');
+                    }
+                    throw error;
+                });
+        };
+    })();
+
+    // Original sidebar/pet script
     (function() {
         var sidebar = document.getElementById('sidebar');
         var mainContent = document.getElementById('main-content');
@@ -143,6 +1429,9 @@
             pet.classList.remove('slim');
             sidebarHint.classList.add('visible');
             localStorage.setItem('sidebarCollapsed', 'true');
+            // 更新 quick-add-bar 位置
+            var quickAddBar = document.querySelector('.quick-add-bar');
+            if (quickAddBar) quickAddBar.classList.add('expanded');
         }
 
         function expandSidebar() {
@@ -153,6 +1442,9 @@
             pet.classList.add('at-sidebar');
             sidebarHint.classList.remove('visible');
             localStorage.setItem('sidebarCollapsed', 'false');
+            // 更新 quick-add-bar 位置
+            var quickAddBar = document.querySelector('.quick-add-bar');
+            if (quickAddBar) quickAddBar.classList.remove('expanded');
         }
 
         // 初始化
@@ -161,6 +1453,8 @@
         } else {
             pet.classList.add('at-sidebar');
         }
+        // 移除早期应用的临时类，JS 已接管状态管理
+        document.documentElement.classList.remove('sidebar-will-collapse');
 
         pet.addEventListener('click', function() {
             if (isCollapsed) {
@@ -221,8 +1515,8 @@
 
             currentY += moveAmount;
 
-            // 边界
-            var minY = petHeight / 2 + 20;
+            // 边界 (考虑48px顶部导航栏)
+            var minY = petHeight / 2 + 48 + 10;
             var maxY = window.innerHeight - petHeight / 2 - 20;
             currentY = Math.max(minY, Math.min(maxY, currentY));
 

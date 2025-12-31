@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Prompt Log - Time Management{% endblock %}
+{% block title %}Prompt历史记录 - Time Management{% endblock %}
 
 {% block content %}
     <div class="page-header compact">
         <div class="header-left">
-            <h1 class="page-title">开发Prompt日志</h1>
+            <h1 class="page-title">Prompt历史记录</h1>
             <p class="quote-text" id="quote-text">{{ quote }}</p>
         </div>
         <button class="btn-shuffle" onclick="shuffleQuote()">换一个</button>
@@ -59,34 +59,9 @@
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div class="modal-overlay" id="edit-modal" style="display:none;" onclick="hideEditModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3>编辑记录</h3>
-                <button class="modal-close" onclick="hideEditModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>内容</label>
-                    <textarea id="edit-content" class="prompt-input" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>标签（用逗号分隔）</label>
-                    <input type="text" id="edit-tags" class="tags-input" placeholder="标签1, 标签2, 标签3">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="hideEditModal()">取消</button>
-                <button class="btn-save" onclick="saveEdit()">保存</button>
-            </div>
-        </div>
-    </div>
-
     <script>
     var allPrompts = [];
     var deleteTargetId = null;
-    var editTargetId = null;
 
     // Update current time display
     function updateCurrentTime() {
@@ -215,7 +190,8 @@
                 '<span class="prompt-index">#' + index + '</span>' +
                 '<span class="prompt-time">' + dateStr + '</span>' +
                 '<div class="prompt-actions">' +
-                    '<button class="btn-edit-prompt" onclick="showEditModal(\'' + prompt.id + '\')" title="编辑">✎</button>' +
+                    '<button class="btn-copy-prompt" onclick="copyPrompt(\'' + prompt.id + '\')" title="复制内容">📋</button>' +
+                    '<button class="btn-copy-to-todo" onclick="copyToTodo(\'' + prompt.id + '\')" title="复制到待执行">📤</button>' +
                     '<button class="btn-delete-prompt" onclick="showDeleteModal(\'' + prompt.id + '\')" title="删除">×</button>' +
                 '</div>' +
             '</div>' +
@@ -289,46 +265,38 @@
         });
     }
 
-    // Edit Modal
-    function showEditModal(id) {
-        editTargetId = id;
+    function copyPrompt(id) {
         var prompt = allPrompts.find(function(p) { return p.id === id; });
         if (!prompt) return;
 
-        document.getElementById('edit-content').value = prompt.content;
-        document.getElementById('edit-tags').value = (prompt.tags || []).join(', ');
-        document.getElementById('edit-modal').style.display = 'flex';
+        navigator.clipboard.writeText(prompt.content).then(function() {
+            showToast('已复制到剪贴板', 'success');
+        }).catch(function() {
+            var textarea = document.createElement('textarea');
+            textarea.value = prompt.content;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('已复制到剪贴板', 'success');
+        });
     }
 
-    function hideEditModal(e) {
-        if (e && e.target !== document.getElementById('edit-modal')) return;
-        document.getElementById('edit-modal').style.display = 'none';
-        editTargetId = null;
-    }
+    function copyToTodo(id) {
+        var prompt = allPrompts.find(function(p) { return p.id === id; });
+        if (!prompt) return;
 
-    function saveEdit() {
-        var content = document.getElementById('edit-content').value.trim();
-        var tagsStr = document.getElementById('edit-tags').value;
-        var tags = tagsStr.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t; });
-
-        if (!content) {
-            showToast('内容不能为空', 'error');
-            return;
-        }
-
-        fetch('/api/prompts/' + editTargetId, {
-            method: 'PUT',
+        fetch('/api/prompt-todos', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: content, tags: tags })
+            body: JSON.stringify({ content: prompt.content, status: '待修改' })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                hideEditModal();
-                loadPrompts();
-                showToast('保存成功', 'success');
+                showToast('已复制到待执行列表', 'success');
             } else {
-                showToast('保存失败: ' + data.error, 'error');
+                showToast('复制失败: ' + data.error, 'error');
             }
         });
     }

@@ -1,0 +1,1477 @@
+{% extends "base.html" %}
+
+{% block title %}工具箱 - Work Engine{% endblock %}
+
+{% block content %}
+    <div class="page-header compact">
+        <div class="header-left">
+            <h1 class="page-title">工具箱</h1>
+            <p class="quote-text" id="quote-text">{{ quote }}</p>
+        </div>
+        <button class="btn-shuffle" onclick="shuffleQuote()">换一个</button>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <div class="toolbox-layout">
+        <!-- 左侧：工具选择器 -->
+        <div class="toolbox-nav">
+            <div class="tool-item active" data-tool="bubble" onclick="switchTool('bubble')">
+                <span class="tool-icon">📊</span>
+                <span class="tool-name">气泡图</span>
+            </div>
+            <div class="tool-item" data-tool="expense" onclick="switchTool('expense')">
+                <span class="tool-icon">💰</span>
+                <span class="tool-name">报销小能手</span>
+            </div>
+            <div class="tool-item" data-tool="ppt" onclick="switchTool('ppt')">
+                <span class="tool-icon">🎬</span>
+                <span class="tool-name">PPT生成器</span>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="toolbox-content">
+            <!-- 气泡图工具 -->
+            <div class="tool-panel" id="tool-bubble">
+                <div class="bubble-main-layout">
+                    <!-- 左侧：历史版本列表 -->
+                    <div class="bubble-sidebar">
+                        <div class="sidebar-header">
+                            <h3>我的图表</h3>
+                            <button class="btn-new" onclick="createNew()">+ 新建</button>
+                        </div>
+                        <div class="saved-list" id="saved-list"></div>
+                    </div>
+
+                    <!-- 右侧：主编辑区 -->
+                    <div class="bubble-editor">
+                        <div class="bubble-meta">
+                            <div class="meta-row">
+                                <input type="text" class="chart-title-input" id="chart-title" placeholder="输入图表标题..." value="未命名图表">
+                                <div class="meta-actions">
+                                    <button class="btn-action btn-save" onclick="saveChart()" title="保存">
+                                        <span class="btn-icon">💾</span> 保存
+                                    </button>
+                                    <button class="btn-action btn-duplicate" onclick="duplicateChart()" title="复制" id="btn-duplicate" style="display:none;">
+                                        <span class="btn-icon">📋</span> 复制
+                                    </button>
+                                    <button class="btn-action btn-delete-chart" onclick="deleteChart()" title="删除" id="btn-delete" style="display:none;">
+                                        <span class="btn-icon">🗑️</span> 删除
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea class="chart-desc-input" id="chart-desc" placeholder="添加图表简介（可选）..." rows="2"></textarea>
+                            <div class="chart-info" id="chart-info" style="display:none;">
+                                <span class="info-item" id="chart-created"></span>
+                                <span class="info-item" id="chart-updated"></span>
+                            </div>
+                        </div>
+
+                        <div class="bubble-container">
+                            <div class="bubble-panel data-panel">
+                                <div class="panel-header">
+                                    <h3>数据输入</h3>
+                                    <div class="panel-actions">
+                                        <button class="btn-small" onclick="addRow()">+ 添加</button>
+                                        <button class="btn-small btn-secondary" onclick="loadExample()">加载示例</button>
+                                        <button class="btn-small btn-secondary" onclick="clearAll()">清空</button>
+                                    </div>
+                                </div>
+                                <div class="data-table-wrapper">
+                                    <table class="data-table" id="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>名称</th>
+                                                <th>X轴值</th>
+                                                <th>Y轴值</th>
+                                                <th>气泡大小</th>
+                                                <th>颜色</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="data-body"></tbody>
+                                    </table>
+                                </div>
+                                <div class="axis-labels">
+                                    <div class="axis-input">
+                                        <label>X轴标签：</label>
+                                        <input type="text" id="x-axis-label" value="投入成本" onchange="updateChart()">
+                                    </div>
+                                    <div class="axis-input">
+                                        <label>Y轴标签：</label>
+                                        <input type="text" id="y-axis-label" value="恢复效果" onchange="updateChart()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bubble-panel chart-panel">
+                                <div class="panel-header">
+                                    <h3>气泡图预览</h3>
+                                    <div class="panel-actions">
+                                        <button class="btn-small" onclick="downloadChart()">下载图片</button>
+                                    </div>
+                                </div>
+                                <div class="chart-wrapper">
+                                    <canvas id="bubble-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 评分维度配置（可折叠） -->
+                        <div class="bubble-panel scoring-panel">
+                            <div class="panel-header collapsible" onclick="toggleScoring()">
+                                <h3>评分维度配置（可选）</h3>
+                                <span class="collapse-icon" id="scoring-icon">▼</span>
+                            </div>
+                            <div class="scoring-content" id="scoring-content" style="display: none;">
+                                <div class="scoring-columns">
+                                    <div class="scoring-column">
+                                        <h4>X轴评分维度</h4>
+                                        <div id="x-dimensions">
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="准备时间">
+                                                <input type="number" placeholder="满分" value="5" min="0">
+                                            </div>
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="展开时间">
+                                                <input type="number" placeholder="满分" value="30" min="0">
+                                            </div>
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="学习成本">
+                                                <input type="number" placeholder="满分" value="15" min="0">
+                                            </div>
+                                        </div>
+                                        <button class="btn-tiny" onclick="addDimension('x')">+ 添加维度</button>
+                                    </div>
+                                    <div class="scoring-column">
+                                        <h4>Y轴评分维度</h4>
+                                        <div id="y-dimensions">
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="精力恢复稳定">
+                                                <input type="number" placeholder="满分" value="30" min="0">
+                                            </div>
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="情绪调节">
+                                                <input type="number" placeholder="满分" value="20" min="0">
+                                            </div>
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="缓解压力">
+                                                <input type="number" placeholder="满分" value="20" min="0">
+                                            </div>
+                                        </div>
+                                        <button class="btn-tiny" onclick="addDimension('y')">+ 添加维度</button>
+                                    </div>
+                                    <div class="scoring-column">
+                                        <h4>气泡大小维度</h4>
+                                        <div id="size-dimensions">
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="上肢激活">
+                                                <input type="number" placeholder="满分" value="15" min="0">
+                                            </div>
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="下肢激活">
+                                                <input type="number" placeholder="满分" value="20" min="0">
+                                            </div>
+                                            <div class="dimension-item">
+                                                <input type="text" placeholder="维度名称" value="全身激活">
+                                                <input type="number" placeholder="满分" value="20" min="0">
+                                            </div>
+                                        </div>
+                                        <button class="btn-tiny" onclick="addDimension('size')">+ 添加维度</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 报销小能手工具 -->
+            <div class="tool-panel" id="tool-expense" style="display: none;">
+                <div class="expense-layout">
+                    <!-- 左侧：报销事件列表 -->
+                    <div class="expense-sidebar">
+                        <div class="sidebar-header">
+                            <h3>报销事项</h3>
+                            <button class="btn-new" onclick="createExpense()">+ 新建</button>
+                        </div>
+                        <div class="expense-list" id="expense-list"></div>
+                    </div>
+
+                    <!-- 右侧：报销详情 -->
+                    <div class="expense-editor" id="expense-editor">
+                        <div class="expense-empty" id="expense-empty">
+                            <div class="empty-icon">💰</div>
+                            <p>选择或新建一个报销事项</p>
+                        </div>
+
+                        <div class="expense-detail" id="expense-detail" style="display: none;">
+                            <div class="expense-header">
+                                <input type="text" class="expense-event-input" id="expense-event" placeholder="报销事件名称...">
+                                <div class="expense-actions">
+                                    <button class="btn-action btn-save" onclick="saveExpense()">
+                                        <span class="btn-icon">💾</span> 保存
+                                    </button>
+                                    <button class="btn-action btn-delete-expense" onclick="deleteExpense()">
+                                        <span class="btn-icon">🗑️</span> 删除
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="expense-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>起始日期</label>
+                                        <input type="date" id="expense-start-date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>结束日期</label>
+                                        <input type="date" id="expense-end-date">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group location-group">
+                                        <label>地点</label>
+                                        <div class="location-input-wrapper">
+                                            <input type="text" id="expense-location" placeholder="输入或选择地点">
+                                            <div class="location-suggestions" id="location-suggestions"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>备注</label>
+                                    <textarea id="expense-notes" rows="2" placeholder="添加备注..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="expense-files-section">
+                                <div class="section-header">
+                                    <h4>报销凭证</h4>
+                                    <span class="file-count" id="file-count">0 个文件</span>
+                                </div>
+
+                                <!-- 文件拖拽区域 -->
+                                <div class="file-drop-zone" id="file-drop-zone">
+                                    <div class="drop-icon">📁</div>
+                                    <p>拖拽文件到此处上传</p>
+                                    <span class="drop-hint">或点击选择文件</span>
+                                    <input type="file" id="file-input" multiple style="display: none;">
+                                </div>
+
+                                <!-- 文件列表 -->
+                                <div class="file-list" id="file-list"></div>
+
+                                <!-- 删除确认垃圾桶 -->
+                                <div class="trash-zone" id="trash-zone">
+                                    <span class="trash-icon">🗑️</span>
+                                    <span>拖到这里删除</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PPT生成器工具 -->
+            <div class="tool-panel" id="tool-ppt" style="display: none;">
+                <div class="ppt-layout">
+                    <!-- 左侧：PPT列表 -->
+                    <div class="ppt-sidebar">
+                        <div class="sidebar-header">
+                            <h3>我的 PPT</h3>
+                            <button class="btn-new" onclick="createPPT()">+ 新建</button>
+                        </div>
+                        <div class="ppt-list" id="ppt-list"></div>
+                    </div>
+
+                    <!-- 右侧：PPT编辑区 -->
+                    <div class="ppt-editor" id="ppt-editor">
+                        <div class="ppt-empty" id="ppt-empty">
+                            <div class="empty-icon">🎬</div>
+                            <p>选择或新建一个 PPT</p>
+                        </div>
+
+                        <div class="ppt-detail" id="ppt-detail" style="display: none;">
+                            <!-- 标题和操作 -->
+                            <div class="ppt-header">
+                                <input type="text" class="ppt-title-input" id="ppt-title" placeholder="PPT 标题...">
+                                <div class="ppt-actions">
+                                    <button class="btn-action btn-preview" onclick="previewPPT()" title="预览">
+                                        <span class="btn-icon">👁️</span> 预览
+                                    </button>
+                                    <button class="btn-action btn-save" onclick="savePPT()">
+                                        <span class="btn-icon">💾</span> 保存
+                                    </button>
+                                    <button class="btn-action btn-download" onclick="downloadPPT()">
+                                        <span class="btn-icon">📥</span> 下载
+                                    </button>
+                                    <button class="btn-action btn-delete-ppt" onclick="deletePPT()" id="btn-delete-ppt" style="display:none;">
+                                        <span class="btn-icon">🗑️</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 模板选择 -->
+                            <div class="ppt-template-section">
+                                <label>选择风格：</label>
+                                <div class="template-options" id="template-options">
+                                    <div class="template-option active" data-template="dark-statement" onclick="selectTemplate('dark-statement')">
+                                        <div class="template-preview dark"></div>
+                                        <span>深色宣言</span>
+                                    </div>
+                                    <div class="template-option" data-template="dark-columns" onclick="selectTemplate('dark-columns')">
+                                        <div class="template-preview dark-cols"></div>
+                                        <span>三栏对比</span>
+                                    </div>
+                                    <div class="template-option" data-template="light-diagram" onclick="selectTemplate('light-diagram')">
+                                        <div class="template-preview light"></div>
+                                        <span>浅色流程</span>
+                                    </div>
+                                    <div class="template-option" data-template="dark-icon" onclick="selectTemplate('dark-icon')">
+                                        <div class="template-preview dark-icon"></div>
+                                        <span>图标要点</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 内容编辑区 -->
+                            <div class="ppt-content-editor">
+                                <div class="editor-section">
+                                    <label>主标题</label>
+                                    <input type="text" id="ppt-main-title" placeholder="输入主标题..." onchange="updatePPTPreview()">
+                                </div>
+
+                                <div class="editor-section">
+                                    <label>副标题 / 说明</label>
+                                    <input type="text" id="ppt-subtitle" placeholder="输入副标题（可选）..." onchange="updatePPTPreview()">
+                                </div>
+
+                                <div class="editor-section">
+                                    <label>核心内容块</label>
+                                    <div class="content-blocks" id="content-blocks">
+                                        <!-- 动态添加的内容块 -->
+                                    </div>
+                                    <button class="btn-add-block" onclick="addContentBlock()">+ 添加内容块</button>
+                                </div>
+
+                                <div class="editor-section">
+                                    <label>底部金句（可选）</label>
+                                    <input type="text" id="ppt-footer" placeholder="输入底部总结或金句..." onchange="updatePPTPreview()">
+                                </div>
+                            </div>
+
+                            <!-- 实时预览 -->
+                            <div class="ppt-preview-section">
+                                <div class="preview-header">
+                                    <h4>实时预览</h4>
+                                    <span class="preview-hint">点击"预览"可全屏查看</span>
+                                </div>
+                                <div class="preview-container" id="preview-container">
+                                    <div class="preview-placeholder">编辑内容后显示预览</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <h3>确认删除</h3>
+            <p id="delete-modal-message">确定要删除这个文件吗？此操作不可恢复。</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeDeleteModal()">取消</button>
+                <button class="btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ============ 工具切换 ============
+        let currentTool = 'bubble';
+
+        function switchTool(tool) {
+            currentTool = tool;
+
+            // 更新导航样式
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.tool === tool);
+            });
+
+            // 切换面板
+            document.querySelectorAll('.tool-panel').forEach(panel => {
+                panel.style.display = 'none';
+            });
+            document.getElementById('tool-' + tool).style.display = 'block';
+
+            // 初始化对应工具
+            if (tool === 'bubble') {
+                loadBubbles();
+            } else if (tool === 'expense') {
+                loadExpenses();
+            } else if (tool === 'ppt') {
+                loadPPTs();
+            }
+        }
+
+        // ============ Toast 通知 ============
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ============ 气泡图功能 ============
+        let bubbleChart = null;
+        let currentBubbleId = null;
+        let bubbleData = [];
+
+        const defaultColors = [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(199, 199, 199, 0.7)'
+        ];
+
+        // 自定义插件：在气泡上显示文字标签（智能避让算法）
+        const bubbleLabelPlugin = {
+            id: 'bubbleLabels',
+            afterDatasetsDraw: function(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = 'bold 11px Arial';
+
+                const chartArea = chart.chartArea;
+                const placedLabels = []; // 已放置的标签边界框
+
+                // 收集所有气泡信息
+                const bubbles = [];
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    if (!meta.hidden && bubbleData[datasetIndex]) {
+                        const element = meta.data[0];
+                        bubbles.push({
+                            x: element.x,
+                            y: element.y,
+                            r: element.options.radius || 10,
+                            name: bubbleData[datasetIndex].name,
+                            dataX: bubbleData[datasetIndex].x,
+                            dataY: bubbleData[datasetIndex].y,
+                            index: datasetIndex
+                        });
+                    }
+                });
+
+                // 按气泡大小排序，大的优先放置标签
+                bubbles.sort((a, b) => b.r - a.r);
+
+                // 8个可选方向
+                const directions = [
+                    { name: 'right', dx: 1, dy: 0, alignX: 'left' },
+                    { name: 'left', dx: -1, dy: 0, alignX: 'right' },
+                    { name: 'top', dx: 0, dy: -1, alignX: 'center' },
+                    { name: 'bottom', dx: 0, dy: 1, alignX: 'center' },
+                    { name: 'top-right', dx: 0.7, dy: -0.7, alignX: 'left' },
+                    { name: 'top-left', dx: -0.7, dy: -0.7, alignX: 'right' },
+                    { name: 'bottom-right', dx: 0.7, dy: 0.7, alignX: 'left' },
+                    { name: 'bottom-left', dx: -0.7, dy: 0.7, alignX: 'right' }
+                ];
+
+                // 根据气泡位置获取首选方向
+                function getPreferredDirections(bubble) {
+                    const relX = (bubble.x - chartArea.left) / (chartArea.right - chartArea.left);
+                    const relY = (bubble.y - chartArea.top) / (chartArea.bottom - chartArea.top);
+
+                    let preferred = [];
+
+                    // 根据位置选择首选方向
+                    if (relX > 0.7) {
+                        // 气泡在右侧，标签放左边
+                        preferred.push(directions[1], directions[5], directions[7]); // left, top-left, bottom-left
+                    } else if (relX < 0.3) {
+                        // 气泡在左侧，标签放右边
+                        preferred.push(directions[0], directions[4], directions[6]); // right, top-right, bottom-right
+                    }
+
+                    if (relY > 0.7) {
+                        // 气泡在下方，标签放上边
+                        preferred.push(directions[2], directions[4], directions[5]); // top, top-right, top-left
+                    } else if (relY < 0.3) {
+                        // 气泡在上方，标签放下边
+                        preferred.push(directions[3], directions[6], directions[7]); // bottom, bottom-right, bottom-left
+                    }
+
+                    // 添加剩余方向作为备选
+                    directions.forEach(dir => {
+                        if (!preferred.includes(dir)) preferred.push(dir);
+                    });
+
+                    return preferred;
+                }
+
+                // 计算标签边界框
+                function getLabelBounds(x, y, width, height, dir) {
+                    let left, right, top, bottom;
+
+                    if (dir.alignX === 'left') {
+                        left = x;
+                        right = x + width;
+                    } else if (dir.alignX === 'right') {
+                        left = x - width;
+                        right = x;
+                    } else {
+                        left = x - width / 2;
+                        right = x + width / 2;
+                    }
+
+                    if (dir.name.includes('top')) {
+                        bottom = y;
+                        top = y - height;
+                    } else if (dir.name.includes('bottom')) {
+                        top = y;
+                        bottom = y + height;
+                    } else {
+                        top = y - height / 2;
+                        bottom = y + height / 2;
+                    }
+
+                    return { left, right, top, bottom, width, height };
+                }
+
+                // 检查是否与气泡重叠
+                function overlapsWithBubbles(labelX, labelY, width, height, currentBubble) {
+                    for (const b of bubbles) {
+                        if (b.index === currentBubble.index) continue;
+                        const dist = Math.sqrt(Math.pow(labelX - b.x, 2) + Math.pow(labelY - b.y, 2));
+                        if (dist < b.r + 8) return true;
+                    }
+                    return false;
+                }
+
+                // 检查是否与已放置标签重叠
+                function overlapsWithLabels(bounds) {
+                    for (const placed of placedLabels) {
+                        if (!(bounds.right < placed.left - 2 || bounds.left > placed.right + 2 ||
+                              bounds.bottom < placed.top - 2 || bounds.top > placed.bottom + 2)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                // 为每个气泡计算最佳标签位置
+                bubbles.forEach(bubble => {
+                    const textWidth = ctx.measureText(bubble.name).width;
+                    const textHeight = 12;
+                    const offset = bubble.r + 6;
+
+                    const preferredDirs = getPreferredDirections(bubble);
+                    let bestPos = null;
+                    let bestDir = null;
+
+                    for (const dir of preferredDirs) {
+                        const labelX = bubble.x + dir.dx * offset;
+                        const labelY = bubble.y + dir.dy * offset;
+                        const bounds = getLabelBounds(labelX, labelY, textWidth, textHeight, dir);
+
+                        // 边界检查
+                        if (bounds.left < chartArea.left - 5 || bounds.right > chartArea.right + 5 ||
+                            bounds.top < chartArea.top - 5 || bounds.bottom > chartArea.bottom + 5) {
+                            continue;
+                        }
+
+                        // 检查与气泡重叠
+                        if (overlapsWithBubbles(labelX, labelY, textWidth, textHeight, bubble)) {
+                            continue;
+                        }
+
+                        // 检查与已放置标签重叠
+                        if (overlapsWithLabels(bounds)) {
+                            continue;
+                        }
+
+                        // 找到合适位置
+                        bestPos = { x: labelX, y: labelY, bounds };
+                        bestDir = dir;
+                        break;
+                    }
+
+                    // 如果没找到完美位置，使用第一个首选方向
+                    if (!bestPos) {
+                        const dir = preferredDirs[0];
+                        const labelX = bubble.x + dir.dx * offset;
+                        const labelY = bubble.y + dir.dy * offset;
+                        bestPos = {
+                            x: labelX,
+                            y: labelY,
+                            bounds: getLabelBounds(labelX, labelY, textWidth, textHeight, dir)
+                        };
+                        bestDir = dir;
+                    }
+
+                    // 记录标签位置
+                    placedLabels.push(bestPos.bounds);
+
+                    // 计算绘制坐标
+                    let drawX = bestPos.x;
+                    let drawY = bestPos.y;
+
+                    if (bestDir.alignX === 'center') {
+                        drawX -= textWidth / 2;
+                    } else if (bestDir.alignX === 'right') {
+                        drawX -= textWidth;
+                    }
+
+                    if (bestDir.name.includes('top')) {
+                        drawY -= 2;
+                    } else if (bestDir.name.includes('bottom')) {
+                        drawY += textHeight;
+                    } else {
+                        drawY += textHeight / 2 - 2;
+                    }
+
+                    // 绘制文字（无边框，纯文字）
+                    ctx.fillStyle = '#333';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(bubble.name, drawX, drawY);
+                });
+
+                ctx.restore();
+            }
+        };
+
+        function initBubbleChart() {
+            const ctx = document.getElementById('bubble-chart').getContext('2d');
+            bubbleChart = new Chart(ctx, {
+                type: 'bubble',
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: '投入成本' },
+                            min: 0, max: 100
+                        },
+                        y: {
+                            title: { display: true, text: '恢复效果' },
+                            min: 0, max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const data = bubbleData[context.datasetIndex];
+                                    return data ? `${data.name}: (${data.x}, ${data.y}) 大小:${data.r}` : '';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [bubbleLabelPlugin]
+            });
+            addRow();
+        }
+
+        function addRow(data = null) {
+            const tbody = document.getElementById('data-body');
+            const row = document.createElement('tr');
+            const colorIndex = tbody.children.length % defaultColors.length;
+
+            row.innerHTML = `
+                <td><input type="text" class="input-name" value="${data?.name || ''}" onchange="updateChart()"></td>
+                <td><input type="number" class="input-x" value="${data?.x || 50}" min="0" max="100" onchange="updateChart()"></td>
+                <td><input type="number" class="input-y" value="${data?.y || 50}" min="0" max="100" onchange="updateChart()"></td>
+                <td><input type="number" class="input-r" value="${data?.r || 20}" min="5" max="50" onchange="updateChart()"></td>
+                <td><input type="color" class="input-color" value="${data?.color || rgbaToHex(defaultColors[colorIndex])}" onchange="updateChart()"></td>
+                <td><button class="btn-delete-row" onclick="deleteRow(this)">×</button></td>
+            `;
+            tbody.appendChild(row);
+            updateChart();
+        }
+
+        function deleteRow(btn) {
+            btn.closest('tr').remove();
+            updateChart();
+        }
+
+        function rgbaToHex(rgba) {
+            const match = rgba.match(/\d+/g);
+            if (match) {
+                return '#' + match.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+            }
+            return '#3498db';
+        }
+
+        function hexToRgba(hex, alpha = 0.7) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function updateChart() {
+            bubbleData = [];
+            const rows = document.querySelectorAll('#data-body tr');
+
+            rows.forEach(row => {
+                const name = row.querySelector('.input-name').value || '未命名';
+                const x = parseFloat(row.querySelector('.input-x').value) || 0;
+                const y = parseFloat(row.querySelector('.input-y').value) || 0;
+                const r = parseFloat(row.querySelector('.input-r').value) || 10;
+                const color = row.querySelector('.input-color').value;
+
+                bubbleData.push({ name, x, y, r, color: hexToRgba(color) });
+            });
+
+            const datasets = bubbleData.map((item, i) => ({
+                label: item.name,
+                data: [{ x: item.x, y: item.y, r: item.r }],
+                backgroundColor: item.color,
+                borderColor: item.color.replace('0.7', '1')
+            }));
+
+            bubbleChart.data.datasets = datasets;
+            bubbleChart.options.scales.x.title.text = document.getElementById('x-axis-label').value;
+            bubbleChart.options.scales.y.title.text = document.getElementById('y-axis-label').value;
+            bubbleChart.update();
+        }
+
+        function clearAll() {
+            document.getElementById('data-body').innerHTML = '';
+            addRow();
+        }
+
+        function loadExample() {
+            const examples = [
+                { name: '睡眠', x: 10, y: 95, r: 30 },
+                { name: '冥想', x: 20, y: 85, r: 25 },
+                { name: '运动', x: 40, y: 80, r: 28 },
+                { name: '阅读', x: 30, y: 70, r: 22 },
+                { name: '游戏', x: 60, y: 50, r: 35 }
+            ];
+            document.getElementById('data-body').innerHTML = '';
+            examples.forEach((item, i) => {
+                item.color = rgbaToHex(defaultColors[i % defaultColors.length]);
+                addRow(item);
+            });
+        }
+
+        async function loadBubbles() {
+            try {
+                const res = await fetch('/api/bubbles');
+                const data = await res.json();
+                renderBubbleList(data.bubbles || []);
+            } catch (e) {
+                console.error('Load bubbles error:', e);
+            }
+        }
+
+        function renderBubbleList(bubbles) {
+            const list = document.getElementById('saved-list');
+            if (bubbles.length === 0) {
+                list.innerHTML = '<div class="empty-list">暂无保存的图表</div>';
+                return;
+            }
+
+            list.innerHTML = bubbles.map(b => `
+                <div class="saved-item ${b.id === currentBubbleId ? 'active' : ''}" onclick="loadBubble('${b.id}')">
+                    <div class="item-title">${b.title}</div>
+                    <div class="item-date">${formatDate(b.updated_at)}</div>
+                </div>
+            `).join('');
+        }
+
+        async function loadBubble(id) {
+            try {
+                const res = await fetch(`/api/bubbles/${id}`);
+                const data = await res.json();
+                if (data.success) {
+                    const b = data.bubble;
+                    currentBubbleId = b.id;
+                    document.getElementById('chart-title').value = b.title;
+                    document.getElementById('chart-desc').value = b.description || '';
+                    document.getElementById('x-axis-label').value = b.x_label;
+                    document.getElementById('y-axis-label').value = b.y_label;
+                    document.getElementById('btn-duplicate').style.display = '';
+                    document.getElementById('btn-delete').style.display = '';
+                    document.getElementById('chart-info').style.display = '';
+                    document.getElementById('chart-created').textContent = '创建: ' + formatDate(b.created_at);
+                    document.getElementById('chart-updated').textContent = '更新: ' + formatDate(b.updated_at);
+
+                    document.getElementById('data-body').innerHTML = '';
+                    (b.data || []).forEach(item => addRow(item));
+                    if (b.data.length === 0) addRow();
+
+                    loadBubbles();
+                }
+            } catch (e) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function createNew() {
+            currentBubbleId = null;
+            document.getElementById('chart-title').value = '未命名图表';
+            document.getElementById('chart-desc').value = '';
+            document.getElementById('x-axis-label').value = '投入成本';
+            document.getElementById('y-axis-label').value = '恢复效果';
+            document.getElementById('btn-duplicate').style.display = 'none';
+            document.getElementById('btn-delete').style.display = 'none';
+            document.getElementById('chart-info').style.display = 'none';
+            clearAll();
+            document.querySelectorAll('.saved-item').forEach(i => i.classList.remove('active'));
+        }
+
+        async function saveChart() {
+            const chartData = {
+                title: document.getElementById('chart-title').value || '未命名图表',
+                description: document.getElementById('chart-desc').value,
+                x_label: document.getElementById('x-axis-label').value,
+                y_label: document.getElementById('y-axis-label').value,
+                data: bubbleData.map(d => ({ ...d, color: d.color }))
+            };
+
+            try {
+                const url = currentBubbleId ? `/api/bubbles/${currentBubbleId}` : '/api/bubbles';
+                const method = currentBubbleId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(chartData)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentBubbleId = data.bubble.id;
+                    showToast('保存成功');
+                    loadBubbles();
+                    document.getElementById('btn-duplicate').style.display = '';
+                    document.getElementById('btn-delete').style.display = '';
+                }
+            } catch (e) {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        async function deleteChart() {
+            if (!currentBubbleId || !confirm('确定要删除这个图表吗？')) return;
+            try {
+                await fetch(`/api/bubbles/${currentBubbleId}`, { method: 'DELETE' });
+                showToast('已删除');
+                createNew();
+                loadBubbles();
+            } catch (e) {
+                showToast('删除失败', 'error');
+            }
+        }
+
+        async function duplicateChart() {
+            if (!currentBubbleId) return;
+            try {
+                const res = await fetch(`/api/bubbles/${currentBubbleId}/duplicate`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('已复制');
+                    loadBubble(data.bubble.id);
+                }
+            } catch (e) {
+                showToast('复制失败', 'error');
+            }
+        }
+
+        function downloadChart() {
+            const link = document.createElement('a');
+            link.download = (document.getElementById('chart-title').value || 'bubble-chart') + '.png';
+            link.href = document.getElementById('bubble-chart').toDataURL();
+            link.click();
+        }
+
+        function toggleScoring() {
+            const content = document.getElementById('scoring-content');
+            const icon = document.getElementById('scoring-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        function addDimension(axis) {
+            const container = document.getElementById(axis + '-dimensions');
+            const div = document.createElement('div');
+            div.className = 'dimension-item';
+            div.innerHTML = `
+                <input type="text" placeholder="维度名称">
+                <input type="number" placeholder="满分" value="10" min="0">
+                <button class="btn-delete-small" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // ============ 报销小能手功能 ============
+        let currentExpenseId = null;
+        let expenses = [];
+        let commonLocations = [];
+        let deleteTarget = null;
+
+        async function loadExpenses() {
+            try {
+                const res = await fetch('/api/expenses');
+                const data = await res.json();
+                expenses = data.expenses || [];
+                commonLocations = data.common_locations || [];
+                renderExpenseList();
+                renderLocationSuggestions();
+            } catch (e) {
+                console.error('Load expenses error:', e);
+            }
+        }
+
+        function renderExpenseList() {
+            const list = document.getElementById('expense-list');
+            if (expenses.length === 0) {
+                list.innerHTML = '<div class="empty-list">暂无报销事项</div>';
+                return;
+            }
+
+            list.innerHTML = expenses.map(e => `
+                <div class="expense-item ${e.id === currentExpenseId ? 'active' : ''}" onclick="loadExpenseItem('${e.id}')">
+                    <div class="expense-item-header">
+                        <span class="expense-item-event">${e.event || '未命名'}</span>
+                        <span class="expense-item-files">${(e.files || []).length} 文件</span>
+                    </div>
+                    <div class="expense-item-info">
+                        <span class="expense-item-location">${e.location || '-'}</span>
+                        <span class="expense-item-date">${e.start_date || ''} ~ ${e.end_date || ''}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLocationSuggestions() {
+            const container = document.getElementById('location-suggestions');
+            container.innerHTML = commonLocations.map(loc =>
+                `<div class="location-chip" onclick="selectLocation('${loc}')">${loc}</div>`
+            ).join('');
+        }
+
+        function selectLocation(loc) {
+            document.getElementById('expense-location').value = loc;
+        }
+
+        async function loadExpenseItem(id) {
+            currentExpenseId = id;
+            const expense = expenses.find(e => e.id === id);
+            if (!expense) return;
+
+            document.getElementById('expense-empty').style.display = 'none';
+            document.getElementById('expense-detail').style.display = 'block';
+
+            document.getElementById('expense-event').value = expense.event || '';
+            document.getElementById('expense-start-date').value = expense.start_date || '';
+            document.getElementById('expense-end-date').value = expense.end_date || '';
+            document.getElementById('expense-location').value = expense.location || '';
+            document.getElementById('expense-notes').value = expense.notes || '';
+
+            renderExpenseFiles(expense.files || []);
+            renderExpenseList();
+        }
+
+        function renderExpenseFiles(files) {
+            const list = document.getElementById('file-list');
+            document.getElementById('file-count').textContent = files.length + ' 个文件';
+
+            if (files.length === 0) {
+                list.innerHTML = '<div class="empty-files">暂无文件，拖拽上传</div>';
+                return;
+            }
+
+            list.innerHTML = files.map(f => `
+                <div class="file-item" draggable="true" data-file-id="${f.id}"
+                     ondragstart="startDragFile(event, '${f.id}')"
+                     ondragend="endDragFile(event)">
+                    <div class="file-icon">${getFileIcon(f.type)}</div>
+                    <div class="file-info">
+                        <div class="file-name">${f.filename}</div>
+                        <div class="file-meta">
+                            <span class="file-size">${f.size_readable}</span>
+                            <span class="file-category">${f.analysis?.category || ''}</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-file-action" onclick="viewFile('${f.id}')" title="查看">👁️</button>
+                        <button class="btn-file-action btn-delete-file" onclick="prepareDeleteFile('${f.id}')" title="删除">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFileIcon(type) {
+            const icons = {
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'webp': '🖼️',
+                'pdf': '📄', 'doc': '📝', 'docx': '📝',
+                'xls': '📊', 'xlsx': '📊', 'csv': '📊'
+            };
+            return icons[type] || '📎';
+        }
+
+        function createExpense() {
+            currentExpenseId = null;
+            document.getElementById('expense-empty').style.display = 'none';
+            document.getElementById('expense-detail').style.display = 'block';
+            document.getElementById('expense-event').value = '';
+            document.getElementById('expense-start-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-end-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-location').value = '';
+            document.getElementById('expense-notes').value = '';
+            document.getElementById('file-list').innerHTML = '<div class="empty-files">保存后可上传文件</div>';
+            document.getElementById('file-count').textContent = '0 个文件';
+            document.querySelectorAll('.expense-item').forEach(i => i.classList.remove('active'));
+        }
+
+        async function saveExpense() {
+            const expenseData = {
+                event: document.getElementById('expense-event').value,
+                location: document.getElementById('expense-location').value,
+                start_date: document.getElementById('expense-start-date').value,
+                end_date: document.getElementById('expense-end-date').value,
+                notes: document.getElementById('expense-notes').value
+            };
+
+            try {
+                const url = currentExpenseId ? `/api/expenses/${currentExpenseId}` : '/api/expenses';
+                const method = currentExpenseId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(expenseData)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentExpenseId = data.expense.id;
+                    showToast('保存成功');
+                    loadExpenses();
+                    loadExpenseItem(currentExpenseId);
+                }
+            } catch (e) {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        async function deleteExpense() {
+            if (!currentExpenseId || !confirm('确定要删除这个报销事项及其所有文件吗？')) return;
+            try {
+                await fetch(`/api/expenses/${currentExpenseId}`, { method: 'DELETE' });
+                showToast('已删除');
+                currentExpenseId = null;
+                document.getElementById('expense-empty').style.display = 'block';
+                document.getElementById('expense-detail').style.display = 'none';
+                loadExpenses();
+            } catch (e) {
+                showToast('删除失败', 'error');
+            }
+        }
+
+        // 文件拖拽上传
+        const dropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone?.addEventListener('click', () => fileInput.click());
+
+        dropZone?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone?.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput?.addEventListener('change', () => handleFiles(fileInput.files));
+
+        async function handleFiles(files) {
+            if (!currentExpenseId) {
+                showToast('请先保存报销事项', 'error');
+                return;
+            }
+
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch(`/api/expenses/${currentExpenseId}/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(`${file.name} 上传成功`);
+                    } else {
+                        showToast(`${file.name} 上传失败: ${data.error}`, 'error');
+                    }
+                } catch (e) {
+                    showToast(`${file.name} 上传失败`, 'error');
+                }
+            }
+            loadExpenses();
+            loadExpenseItem(currentExpenseId);
+        }
+
+        // 文件拖拽删除
+        function startDragFile(e, fileId) {
+            e.dataTransfer.setData('text/plain', fileId);
+            document.getElementById('trash-zone').classList.add('show');
+        }
+
+        function endDragFile(e) {
+            document.getElementById('trash-zone').classList.remove('show');
+        }
+
+        const trashZone = document.getElementById('trash-zone');
+        trashZone?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            trashZone.classList.add('drag-over');
+        });
+
+        trashZone?.addEventListener('dragleave', () => {
+            trashZone.classList.remove('drag-over');
+        });
+
+        trashZone?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fileId = e.dataTransfer.getData('text/plain');
+            trashZone.classList.remove('drag-over', 'show');
+            prepareDeleteFile(fileId);
+        });
+
+        function prepareDeleteFile(fileId) {
+            deleteTarget = { type: 'file', id: fileId };
+            document.getElementById('delete-modal-message').textContent = '确定要删除这个文件吗？此操作不可恢复。';
+            document.getElementById('delete-modal').classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('show');
+            deleteTarget = null;
+        }
+
+        async function confirmDelete() {
+            if (!deleteTarget) return;
+
+            if (deleteTarget.type === 'file') {
+                try {
+                    await fetch(`/api/expenses/${currentExpenseId}/files/${deleteTarget.id}`, { method: 'DELETE' });
+                    showToast('文件已删除');
+                    loadExpenses();
+                    loadExpenseItem(currentExpenseId);
+                } catch (e) {
+                    showToast('删除失败', 'error');
+                }
+            }
+            closeDeleteModal();
+        }
+
+        function viewFile(fileId) {
+            window.open(`/api/expenses/${currentExpenseId}/file/${fileId}/view`, '_blank');
+        }
+
+        // ============ PPT 生成器功能 ============
+        let currentPPTId = null;
+        let currentTemplate = 'dark-statement';
+        let ppts = [];
+
+        async function loadPPTs() {
+            try {
+                const res = await fetch('/api/ppt');
+                const data = await res.json();
+                ppts = data.ppts || [];
+                renderPPTList();
+            } catch (e) {
+                console.error('Load PPTs error:', e);
+            }
+        }
+
+        function renderPPTList() {
+            const list = document.getElementById('ppt-list');
+            if (ppts.length === 0) {
+                list.innerHTML = '<div class="empty-list">暂无 PPT，点击新建</div>';
+                return;
+            }
+
+            list.innerHTML = ppts.map(p => `
+                <div class="ppt-item ${p.id === currentPPTId ? 'active' : ''}" onclick="loadPPTItem('${p.id}')">
+                    <div class="ppt-item-title">${p.title}</div>
+                    <div class="ppt-item-meta">
+                        <span>${p.template || 'dark-statement'}</span>
+                        <span>${formatDate(p.updated_at)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadPPTItem(id) {
+            try {
+                const res = await fetch(`/api/ppt/${id}`);
+                const data = await res.json();
+                if (data.success) {
+                    const ppt = data.ppt;
+                    currentPPTId = ppt.id;
+
+                    document.getElementById('ppt-empty').style.display = 'none';
+                    document.getElementById('ppt-detail').style.display = 'flex';
+                    document.getElementById('btn-delete-ppt').style.display = '';
+
+                    document.getElementById('ppt-title').value = ppt.title || '';
+                    document.getElementById('ppt-main-title').value = ppt.main_title || '';
+                    document.getElementById('ppt-subtitle').value = ppt.subtitle || '';
+                    document.getElementById('ppt-footer').value = ppt.footer || '';
+
+                    // Set template
+                    selectTemplate(ppt.template || 'dark-statement');
+
+                    // Render content blocks
+                    const blocksContainer = document.getElementById('content-blocks');
+                    blocksContainer.innerHTML = '';
+                    (ppt.content_blocks || []).forEach(block => {
+                        addContentBlock(block);
+                    });
+
+                    renderPPTList();
+                    updatePPTPreview();
+                }
+            } catch (e) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function createPPT() {
+            currentPPTId = null;
+            document.getElementById('ppt-empty').style.display = 'none';
+            document.getElementById('ppt-detail').style.display = 'flex';
+            document.getElementById('btn-delete-ppt').style.display = 'none';
+
+            document.getElementById('ppt-title').value = '未命名 PPT';
+            document.getElementById('ppt-main-title').value = '';
+            document.getElementById('ppt-subtitle').value = '';
+            document.getElementById('ppt-footer').value = '';
+
+            selectTemplate('dark-statement');
+            document.getElementById('content-blocks').innerHTML = '';
+            addContentBlock();
+
+            document.querySelectorAll('.ppt-item').forEach(i => i.classList.remove('active'));
+            updatePPTPreview();
+        }
+
+        function selectTemplate(template) {
+            currentTemplate = template;
+            document.querySelectorAll('.template-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.template === template);
+            });
+            updatePPTPreview();
+        }
+
+        function addContentBlock(data = null) {
+            const container = document.getElementById('content-blocks');
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            block.innerHTML = `
+                <button class="btn-remove-block" onclick="this.parentElement.remove(); updatePPTPreview();">×</button>
+                <div class="content-block-header">
+                    <input type="text" class="block-title" placeholder="标题..." value="${data?.title || ''}" onchange="updatePPTPreview()">
+                    <select class="block-type" onchange="updatePPTPreview()">
+                        <option value="text" ${data?.type === 'text' ? 'selected' : ''}>文本</option>
+                        <option value="highlight" ${data?.type === 'highlight' ? 'selected' : ''}>高亮框</option>
+                        <option value="list" ${data?.type === 'list' ? 'selected' : ''}>列表</option>
+                    </select>
+                </div>
+                <textarea class="block-content" placeholder="内容（列表类型每行一项）..." onchange="updatePPTPreview()">${data?.content || ''}</textarea>
+            `;
+            container.appendChild(block);
+        }
+
+        function getContentBlocks() {
+            const blocks = [];
+            document.querySelectorAll('.content-block').forEach(block => {
+                blocks.push({
+                    title: block.querySelector('.block-title').value,
+                    type: block.querySelector('.block-type').value,
+                    content: block.querySelector('.block-content').value
+                });
+            });
+            return blocks;
+        }
+
+        async function savePPT() {
+            const pptData = {
+                title: document.getElementById('ppt-title').value || '未命名 PPT',
+                template: currentTemplate,
+                main_title: document.getElementById('ppt-main-title').value,
+                subtitle: document.getElementById('ppt-subtitle').value,
+                content_blocks: getContentBlocks(),
+                footer: document.getElementById('ppt-footer').value
+            };
+
+            try {
+                const url = currentPPTId ? `/api/ppt/${currentPPTId}` : '/api/ppt';
+                const method = currentPPTId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pptData)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentPPTId = data.ppt.id;
+                    showToast('保存成功');
+                    loadPPTs();
+                    document.getElementById('btn-delete-ppt').style.display = '';
+                }
+            } catch (e) {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        async function deletePPT() {
+            if (!currentPPTId || !confirm('确定要删除这个 PPT 吗？')) return;
+            try {
+                await fetch(`/api/ppt/${currentPPTId}`, { method: 'DELETE' });
+                showToast('已删除');
+                currentPPTId = null;
+                document.getElementById('ppt-empty').style.display = 'flex';
+                document.getElementById('ppt-detail').style.display = 'none';
+                loadPPTs();
+            } catch (e) {
+                showToast('删除失败', 'error');
+            }
+        }
+
+        function updatePPTPreview() {
+            const mainTitle = document.getElementById('ppt-main-title').value || '主标题';
+            const subtitle = document.getElementById('ppt-subtitle').value;
+            const footer = document.getElementById('ppt-footer').value;
+            const blocks = getContentBlocks();
+
+            let blocksHtml = '';
+            blocks.forEach(block => {
+                if (block.type === 'highlight') {
+                    blocksHtml += `<div style="background:rgba(233,69,96,0.15);border-left:4px solid #e94560;padding:15px;border-radius:0 8px 8px 0;margin:10px 0;">
+                        <div style="color:#e94560;font-size:12px;font-weight:600;margin-bottom:4px;">${block.title}</div>
+                        <div style="color:#fff;font-size:14px;">${block.content}</div>
+                    </div>`;
+                } else if (block.type === 'list') {
+                    const items = block.content.split('\n').filter(i => i.trim());
+                    const itemsHtml = items.map(i => `<li style="color:rgba(255,255,255,0.85);font-size:11px;margin:4px 0;">${i}</li>`).join('');
+                    blocksHtml += `<div style="margin:10px 0;">
+                        <div style="color:#4facfe;font-size:12px;font-weight:600;margin-bottom:4px;">${block.title}</div>
+                        <ul style="list-style:disc;padding-left:20px;">${itemsHtml}</ul>
+                    </div>`;
+                } else {
+                    blocksHtml += `<div style="margin:10px 0;">
+                        <div style="color:#4facfe;font-size:12px;font-weight:600;margin-bottom:4px;">${block.title}</div>
+                        <div style="color:rgba(255,255,255,0.85);font-size:11px;">${block.content}</div>
+                    </div>`;
+                }
+            });
+
+            const previewHtml = `
+                <div style="width:100%;height:100%;padding:20px;display:flex;flex-direction:column;">
+                    <div style="margin-bottom:15px;">
+                        <div style="font-size:18px;font-weight:700;background:linear-gradient(90deg,#fff,#4facfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${mainTitle}</div>
+                        ${subtitle ? `<div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px;">${subtitle}</div>` : ''}
+                    </div>
+                    <div style="flex:1;overflow:auto;">${blocksHtml}</div>
+                    ${footer ? `<div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;font-size:9px;color:rgba(255,255,255,0.4);font-style:italic;">${footer}</div>` : ''}
+                </div>
+            `;
+
+            const container = document.getElementById('preview-container');
+            container.innerHTML = previewHtml;
+        }
+
+        function previewPPT() {
+            if (!currentPPTId) {
+                showToast('请先保存 PPT', 'error');
+                return;
+            }
+
+            fetch(`/api/ppt/${currentPPTId}/export`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const win = window.open('', '_blank');
+                        win.document.write(data.html);
+                        win.document.close();
+                    }
+                });
+        }
+
+        function downloadPPT() {
+            if (!currentPPTId) {
+                showToast('请先保存 PPT', 'error');
+                return;
+            }
+
+            fetch(`/api/ppt/${currentPPTId}/export`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const blob = new Blob([data.html], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = (document.getElementById('ppt-title').value || 'ppt') + '.html';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showToast('下载成功');
+                    }
+                });
+        }
+
+        // ============ 工具函数 ============
+        function formatDate(isoString) {
+            if (!isoString) return '';
+            const d = new Date(isoString);
+            return d.toLocaleDateString('zh-CN');
+        }
+
+        function shuffleQuote() {
+            fetch('/api/quote/random')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('quote-text').textContent = data.quote;
+                });
+        }
+
+        // ============ 初始化 ============
+        document.addEventListener('DOMContentLoaded', () => {
+            initBubbleChart();
+            loadBubbles();
+        });
+    </script>
+{% endblock %}

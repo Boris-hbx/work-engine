@@ -21,17 +21,40 @@ Thumbs.db
 .claude/
 .continue/
 
-# Data files (private - only sensitive files)
-data/todolist.txt
-data/todos.json
+# ============================================
+# PRIVATE DATA - NEVER COMMIT TO GIT
+# ============================================
+
+# Private data folder (all contents excluded)
+private-data/*
+!private-data/.gitkeep
 
 # Config folder (contains API keys)
 config/
 
-# Backup files (remove this line if you want to track backups)
+# Sensitive data files in data folder
+data/todolist.txt
+data/todos.json
+data/motivation.txt
+data/prompts.json
+data/bubbles.json
+data/prompt-todo.json
+data/prompt-todo.json.backup
+data/prompt-todo.json.backup2
+data/config.json
+
+# ============================================
+# OTHER EXCLUSIONS
+# ============================================
+
+# Backup files and folders
 backupfiles/
+backups/
+docs/backup/
 
 # Temporary files
 *.tmp
 *.log
-data/config.json
+
+# Screenshots (optional - remove if you want to track)
+# PrtSc/
