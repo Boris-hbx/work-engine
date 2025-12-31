@@ -32,16 +32,7 @@ private-data/*
 # Config folder (contains API keys)
 config/
 
-# Sensitive data files in data folder
-data/todolist.txt
-data/todos.json
-data/motivation.txt
-data/prompts.json
-data/bubbles.json
-data/prompt-todo.json
-data/prompt-todo.json.backup
-data/prompt-todo.json.backup2
-data/config.json
+# data folder is now tracked in git
 
 # ============================================
 # OTHER EXCLUSIONS

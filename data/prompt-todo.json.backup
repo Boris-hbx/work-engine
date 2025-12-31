@@ -1,0 +1,44 @@
+[
+  {
+    "id": "44ca3687",
+    "content": "一、色彩与氛围升级（UI优化任务）",
+    "status": "待修改",
+    "created_at": "2025-12-27T14:55:25.345441"
+  },
+  {
+    "id": "87600cc3",
+    "content": "我想设计一款小游戏，网页游戏或者手机游戏都可以，要求是这样的，我希望这个游戏的元素（文字、按钮，或者图片之类的）能带有我们团队的信息，比如名字、头像、业务名称、团队所在工作地名称、关键产品等；这个游戏可以很多人一起玩，尤其适合聚会的时候一起玩。难度不大，但有一定的趣味性，且让大家无形之中对团队有更深厚的感情，也能让大家彼此之间的距离更紧密一些。如果有公司领导，也可以让领导来玩这个游戏。可以几个人玩，也可以很多人玩。你帮我思考一下。",
+    "status": "待修改",
+    "created_at": "2025-12-28T13:15:39.981357"
+  },
+  {
+    "id": "3f726f1f",
+    "content": "我想弄个多租户管理系统，有个账号登陆界面，账号密码统一保存在本地private文件夹里面，并实现一个基本加密逻辑。密码4个数字的pin码即可。",
+    "status": "待修改",
+    "created_at": "2025-12-29T19:20:06.401714"
+  },
+  {
+    "id": "fbbedb19",
+    "content": "有没有什么办法，让每次你push github的时候，不要上传private数据，不要我每次提醒，而是你基于某种原则，可以不让我操心？如果有，请帮我实现这个功能。",
+    "status": "待执行",
+    "created_at": "2025-12-29T19:30:28.657757"
+  },
+  {
+    "id": "7fece164",
+    "content": "You are a Spec-Driven AI Agent.\n\nYour primary responsibility is NOT to directly solve tasks,\nbut to first transform any ambiguous or high-level request\ninto a clear, executable SPECIFICATION (Spec).\n\nYou must strictly follow this workflow:\n\n1. Spec First\n- Never jump to implementation or execution.\n- Always produce a formal Spec before any action.\n\n2. Spec Structure\nEvery Spec MUST explicitly define:\n- Objective: What problem is being solved\n- Non-Goals: What is explicitly out of scope\n- Inputs: Data, constraints, assumptions\n- Outputs: Format, schema, success criteria\n- Behavioral Rules: Allowed and forbidden behaviors\n- Edge Cases & Failure Modes\n- Evaluation Criteria: How success is measured\n\n3. Clarification Rules\n- If any part of the request is ambiguous, incomplete, or underspecified,\n  you MUST stop and ask targeted clarification questions.\n- Do NOT guess or hallucinate missing requirements.\n\n4. Execution Rules\n- Only proceed to execution AFTER the Spec is explicitly approved.\n- Execution must strictly conform to the approved Spec.\n- Any deviation requires Spec revision.\n\n5. Communication Style\n- Be precise, structured, and implementation-oriented.\n- Avoid marketing language, fluff, or vague wording.",
+    "status": "待执行",
+    "created_at": "2025-12-30T06:07:26.052595"
+  },
+  {
+    "id": "1b2c9131",
+    "content": "推荐 Task Spec 模板（你本地维护）\ntask_name: <string>\n\nbackground:\n  # 背景信息，为什么要做这件事\n\nobjective:\n  # 本次要解决的具体问题\n\nconstraints:\n  - 技术限制\n  - 时间 / 成本限制\n  - 合规要求\n\ninputs:\n  - 描述输入数据或已有资源\n\nexpected_outputs:\n  format: <text | json | code | diagram>\n  details: <what should be included>\n\nout_of_scope:\n  - 明确不做的事情\n\nevaluation:\n  - 可验证的成功标准\n\n\n📌 每次运行 Agent，我只填这个 YAML\n📌 Agent 会自动补齐完整 Spec",
+    "status": "待执行",
+    "created_at": "2025-12-30T06:07:58.069153"
+  },
+  {
+    "id": "3cf8b039",
+    "content": "可以加：\n\nSpec Diff（Spec 变更对比）\n\nSpec → Prompt 自动编译\n\nSpec → Eval Case 自动生成\n\nMulti-Agent Spec Negotiation\n\nSpec Lint（自动检查是否完整）",
+    "status": "待执行",
+    "created_at": "2025-12-30T06:09:38.346694"
+  }
+]
