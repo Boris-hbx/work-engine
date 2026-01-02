@@ -137,86 +137,69 @@
                             </div>
                         </div>
                     </div>
+                    <!-- v2.2: 重新布局 - 画布在上，工具栏在下 -->
                     <div class="tower-main">
-                        <div class="tower-selector">
-                            <h4>选择防御塔 <span class="team-hint">👥 团队武器库</span></h4>
-                            <div class="tower-options">
-                                <button class="tower-option selected" data-type="basic" onclick="TowerDefense.selectTower('basic')" title="Boris炮台 - 基础伤害塔">
-                                    <span class="tower-icon">🔫</span>
-                                    <span class="tower-name">Boris炮台</span>
-                                    <span class="tower-alias">基础塔</span>
-                                    <span class="tower-cost">💰 50</span>
-                                </button>
-                                <button class="tower-option" data-type="slow" onclick="TowerDefense.selectTower('slow')" title="Ruby冰霜 - 减速敌人">
-                                    <span class="tower-icon">❄️</span>
-                                    <span class="tower-name">Ruby冰霜</span>
-                                    <span class="tower-alias">冰冻塔</span>
-                                    <span class="tower-cost">💰 75</span>
-                                </button>
-                                <button class="tower-option" data-type="splash" onclick="TowerDefense.selectTower('splash')" title="DongQiu爆破 - 范围伤害">
-                                    <span class="tower-icon">💥</span>
-                                    <span class="tower-name">DongQiu爆破</span>
-                                    <span class="tower-alias">溅射塔</span>
-                                    <span class="tower-cost">💰 100</span>
-                                </button>
-                                <button class="tower-option" data-type="sniper" onclick="TowerDefense.selectTower('sniper')" title="Yun精准 - 高伤害远程">
-                                    <span class="tower-icon">🎯</span>
-                                    <span class="tower-name">Yun精准</span>
-                                    <span class="tower-alias">狙击塔</span>
-                                    <span class="tower-cost">💰 150</span>
-                                </button>
-                                <!-- v1.3: 新防御塔 - 产品系列 -->
-                                <button class="tower-option" data-type="laser" onclick="TowerDefense.selectTower('laser')" title="TRC光束 - 持续激光攻击">
-                                    <span class="tower-icon">⚡</span>
-                                    <span class="tower-name">TRC光束</span>
-                                    <span class="tower-alias">激光塔</span>
-                                    <span class="tower-cost">💰 200</span>
-                                </button>
-                                <button class="tower-option" data-type="poison" onclick="TowerDefense.selectTower('poison')" title="CSE毒雾 - 范围持续伤害">
-                                    <span class="tower-icon">☠️</span>
-                                    <span class="tower-name">CSE毒雾</span>
-                                    <span class="tower-alias">毒气塔</span>
-                                    <span class="tower-cost">💰 120</span>
-                                </button>
-                                <button class="tower-option" data-type="chain" onclick="TowerDefense.selectTower('chain')" title="CARI链电 - 连锁闪电攻击">
-                                    <span class="tower-icon">🔌</span>
-                                    <span class="tower-name">CARI链电</span>
-                                    <span class="tower-alias">电磁塔</span>
-                                    <span class="tower-cost">💰 180</span>
-                                </button>
-                            </div>
-                            <!-- v2.0: 技能系统 -->
-                            <h4>主动技能</h4>
-                            <div class="skill-bar">
-                                <button class="skill-btn" data-skill="meteor" onclick="TowerDefense.useSkill('meteor')" title="陨石雨 [Q] - 对区域造成200伤害">
-                                    <span class="skill-icon">☄️</span>
-                                    <span class="skill-name">陨石雨</span>
-                                    <span class="skill-key">Q</span>
-                                    <div class="skill-cooldown" id="meteorCooldown"></div>
-                                </button>
-                                <button class="skill-btn" data-skill="freeze" onclick="TowerDefense.useSkill('freeze')" title="冰封 [W] - 冻结所有敌人3秒">
-                                    <span class="skill-icon">🥶</span>
-                                    <span class="skill-name">冰封</span>
-                                    <span class="skill-key">W</span>
-                                    <div class="skill-cooldown" id="freezeCooldown"></div>
-                                </button>
-                                <button class="skill-btn" data-skill="slowtime" onclick="TowerDefense.useSkill('slowtime')" title="时间减速 [E] - 敌人减速50%持续5秒">
-                                    <span class="skill-icon">⏱️</span>
-                                    <span class="skill-name">时间减速</span>
-                                    <span class="skill-key">E</span>
-                                    <div class="skill-cooldown" id="slowtimeCooldown"></div>
-                                </button>
-                            </div>
-                            <!-- v2.0: 天赋系统入口 -->
-                            <button class="talent-btn" onclick="TowerDefense.showTalentPanel()" title="天赋树 - 永久加成">
-                                ✨ 天赋树
-                            </button>
-                            <!-- v2.0: 每日挑战入口 -->
-                            <button class="challenge-btn" onclick="TowerDefense.showChallengePanel()" title="每日挑战 - 获取额外奖励">
-                                🎯 每日挑战
-                            </button>
-                        </div>
                         <canvas id="towerCanvas" width="700" height="500"></canvas>
+                        <div class="tower-selector">
+                            <div class="tower-toolbar">
+                                <div class="tower-options">
+                                    <button class="tower-option selected" data-type="basic" onclick="TowerDefense.selectTower('basic')" title="Boris炮台 - 基础伤害塔">
+                                        <span class="tower-icon">🔫</span>
+                                        <span class="tower-alias">基础塔</span>
+                                        <span class="tower-cost">💰50</span>
+                                    </button>
+                                    <button class="tower-option" data-type="slow" onclick="TowerDefense.selectTower('slow')" title="Ruby冰霜 - 减速敌人">
+                                        <span class="tower-icon">❄️</span>
+                                        <span class="tower-alias">冰冻塔</span>
+                                        <span class="tower-cost">💰75</span>
+                                    </button>
+                                    <button class="tower-option" data-type="splash" onclick="TowerDefense.selectTower('splash')" title="DongQiu爆破 - 范围伤害">
+                                        <span class="tower-icon">💥</span>
+                                        <span class="tower-alias">溅射塔</span>
+                                        <span class="tower-cost">💰100</span>
+                                    </button>
+                                    <button class="tower-option" data-type="sniper" onclick="TowerDefense.selectTower('sniper')" title="Yun精准 - 高伤害远程">
+                                        <span class="tower-icon">🎯</span>
+                                        <span class="tower-alias">狙击塔</span>
+                                        <span class="tower-cost">💰150</span>
+                                    </button>
+                                    <button class="tower-option" data-type="laser" onclick="TowerDefense.selectTower('laser')" title="TRC光束 - 持续激光攻击">
+                                        <span class="tower-icon">⚡</span>
+                                        <span class="tower-alias">激光塔</span>
+                                        <span class="tower-cost">💰200</span>
+                                    </button>
+                                    <button class="tower-option" data-type="poison" onclick="TowerDefense.selectTower('poison')" title="CSE毒雾 - 范围持续伤害">
+                                        <span class="tower-icon">☠️</span>
+                                        <span class="tower-alias">毒气塔</span>
+                                        <span class="tower-cost">💰120</span>
+                                    </button>
+                                    <button class="tower-option" data-type="chain" onclick="TowerDefense.selectTower('chain')" title="CARI链电 - 连锁闪电攻击">
+                                        <span class="tower-icon">🔌</span>
+                                        <span class="tower-alias">电磁塔</span>
+                                        <span class="tower-cost">💰180</span>
+                                    </button>
+                                </div>
+                                <div class="skill-bar">
+                                    <button class="skill-btn" data-skill="meteor" onclick="TowerDefense.useSkill('meteor')" title="陨石雨 [Q]">
+                                        <span class="skill-icon">☄️</span>
+                                        <span class="skill-key">Q</span>
+                                        <div class="skill-cooldown" id="meteorCooldown"></div>
+                                    </button>
+                                    <button class="skill-btn" data-skill="freeze" onclick="TowerDefense.useSkill('freeze')" title="冰封 [W]">
+                                        <span class="skill-icon">🥶</span>
+                                        <span class="skill-key">W</span>
+                                        <div class="skill-cooldown" id="freezeCooldown"></div>
+                                    </button>
+                                    <button class="skill-btn" data-skill="slowtime" onclick="TowerDefense.useSkill('slowtime')" title="时间减速 [E]">
+                                        <span class="skill-icon">⏱️</span>
+                                        <span class="skill-key">E</span>
+                                        <div class="skill-cooldown" id="slowtimeCooldown"></div>
+                                    </button>
+                                    <button class="talent-btn compact" onclick="TowerDefense.showTalentPanel()" title="天赋树">✨</button>
+                                    <button class="challenge-btn compact" onclick="TowerDefense.showChallengePanel()" title="每日挑战">🎯</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="tower-status" id="towerStatus"></div>
                 </div>
@@ -404,7 +387,7 @@
     <!-- Page Footer - Designer Signature -->
     <div class="game-page-footer">
         <span class="footer-text">Designed by</span>
-        <img src="{{ url_for('static', filename='images/boris-signature.png') }}" alt="Boris Huai" class="footer-signature">
+        <span class="footer-signature-text">Boris Huai</span>
     </div>
 </div>
 
@@ -1360,45 +1343,55 @@
 
 #towerGame:fullscreen #towerCanvas,
 #towerGame:-webkit-full-screen #towerCanvas {
-    width: 100%;
-    max-width: 900px;
-    height: auto;
+    width: auto;
+    height: 80vh;
+    max-height: 600px;
+    aspect-ratio: 7 / 5;
 }
 
+/* v2.2: 重新设计布局 - 画布居中，塔台选择器在下方 */
 .tower-main {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 12px;
 }
 
 .tower-selector {
-    width: 100px;
-    flex-shrink: 0;
-}
-
-.tower-selector h4 {
-    font-size: 0.8rem;
-    color: var(--text-primary);
-    margin: 0 0 10px 0;
-    text-align: center;
-}
-
-.tower-options {
+    width: 100%;
+    max-width: 720px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
+.tower-selector h4 {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    margin: 0;
+    text-align: left;
+}
+
+.tower-options {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+}
+
 .tower-option {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    padding: 12px 8px;
+    padding: 8px 12px;
     background: #f3f4f6;
     border: 2px solid transparent;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
-    min-height: auto;
+    gap: 8px;
+    min-width: 90px;
 }
 
 .tower-option:hover {
@@ -1412,25 +1405,23 @@
 }
 
 .tower-option .tower-icon {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     flex-shrink: 0;
     line-height: 1;
-    min-height: 1.4rem;
 }
 
 .tower-option .tower-name {
     font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-top: 4px;
     white-space: nowrap;
     flex-shrink: 0;
+    display: none; /* 隐藏全名，节省空间 */
 }
 
 .tower-option .tower-cost {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    margin-top: 2px;
 }
 
 /* 团队元素样式 */
@@ -1439,17 +1430,47 @@
     font-weight: normal;
     color: #8b5cf6;
     margin-left: 8px;
+    display: none; /* 紧凑布局下隐藏 */
 }
 
 .tower-option .tower-alias {
-    font-size: 0.55rem;
-    color: #9ca3af;
-    margin-top: 1px;
-    opacity: 0.8;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    white-space: nowrap;
 }
 
 .tower-option:hover .tower-alias {
-    color: #c4b5fd;
+    color: var(--primary-color);
+}
+
+/* v2.2: 工具栏布局 */
+.tower-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 12px;
+}
+
+.skill-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.talent-btn.compact,
+.challenge-btn.compact {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 地图按钮扩展 - 支持更多城市 */
@@ -1469,7 +1490,10 @@
     background: #1a1a2e;
     border-radius: 8px;
     cursor: crosshair;
-    flex: 1;
+    width: 700px;
+    height: 500px;
+    max-width: 100%;
+    aspect-ratio: 7 / 5;
 }
 
 .tower-status {
@@ -2005,6 +2029,16 @@
     width: auto;
 }
 
+.footer-signature-text {
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 /* Debug panel styles */
 .tower-debug {
     position: absolute;
@@ -2091,13 +2125,29 @@ function switchGame(game) {
         window.zenInitialized = true;
     }
 
-    // Initialize tower defense if selected (use setTimeout to prevent blocking)
+    // Initialize tower defense if selected (use requestAnimationFrame for better timing)
     if (game === 'tower' && !window.towerInitialized) {
         window.towerInitialized = true;
-        // Use setTimeout to allow UI to update first, preventing apparent freeze
-        setTimeout(function() {
-            TowerDefense.init();
-        }, 50);
+        // Show loading state on canvas
+        var towerCanvas = document.getElementById('towerCanvas');
+        if (towerCanvas) {
+            var loadCtx = towerCanvas.getContext('2d');
+            if (loadCtx) {
+                loadCtx.fillStyle = '#1a1a2e';
+                loadCtx.fillRect(0, 0, towerCanvas.width, towerCanvas.height);
+                loadCtx.fillStyle = '#fff';
+                loadCtx.font = '18px sans-serif';
+                loadCtx.textAlign = 'center';
+                loadCtx.textBaseline = 'middle';
+                loadCtx.fillText('⏳ 加载中...', towerCanvas.width / 2, towerCanvas.height / 2);
+            }
+        }
+        // Use requestAnimationFrame + setTimeout for smooth init
+        requestAnimationFrame(function() {
+            setTimeout(function() {
+                TowerDefense.init();
+            }, 16);
+        });
     } else if (game === 'tower' && window.TowerDefense) {
         // Resume tower defense if already initialized
         TowerDefense.resume();
@@ -2877,6 +2927,10 @@ var TowerDefense = (function() {
     var COLS = Math.floor(W / CELL);
     var ROWS = Math.floor(H / CELL);
 
+    // 背景图片缓存
+    var mapBgImages = {};
+    var bgImageOpacity = 0.2; // 背景图片透明度（更淡，不影响游戏）
+
     // Game state
     var gold = 100;
     var lives = 10;
@@ -2909,6 +2963,8 @@ var TowerDefense = (function() {
         {
             name: 'Waterloo',
             nameZh: '滑铁卢',
+            bgImage: '/PrtSc/TRC.png',
+            bgGradient: ['#1a365d', '#2c5282'], // 深蓝色调
             path: [
                 { x: 0, y: 200 },
                 { x: 150, y: 200 },
@@ -2924,6 +2980,8 @@ var TowerDefense = (function() {
         {
             name: 'Toronto',
             nameZh: '多伦多',
+            bgImage: '/PrtSc/FRC.png',
+            bgGradient: ['#742a2a', '#9b2c2c'], // 红棕色调(CN塔) - 备用
             path: [
                 { x: 0, y: 250 },
                 { x: 200, y: 250 },
@@ -2939,6 +2997,7 @@ var TowerDefense = (function() {
         {
             name: 'Vancouver',
             nameZh: '温哥华',
+            bgGradient: ['#234e52', '#2c7a7b'], // 青绿色调(海洋)
             path: [
                 { x: 0, y: 150 },
                 { x: 250, y: 150 },
@@ -2952,6 +3011,7 @@ var TowerDefense = (function() {
         {
             name: 'Kingston',
             nameZh: '金士顿',
+            bgGradient: ['#44337a', '#6b46c1'], // 紫色调(皇家)
             path: [
                 { x: 0, y: 100 },
                 { x: 300, y: 100 },
@@ -2967,6 +3027,7 @@ var TowerDefense = (function() {
         {
             name: 'Montreal',
             nameZh: '蒙特利尔',
+            bgGradient: ['#1a202c', '#4a5568'], // 灰黑色调(现代都市)
             path: [
                 { x: 0, y: 450 },
                 { x: 200, y: 450 },
@@ -2982,6 +3043,7 @@ var TowerDefense = (function() {
         {
             name: 'Ottawa',
             nameZh: '渥太华',
+            bgGradient: ['#7b341e', '#c05621'], // 橙棕色调(国会山)
             path: [
                 { x: 0, y: 250 },
                 { x: 150, y: 100 },
@@ -2997,6 +3059,7 @@ var TowerDefense = (function() {
         {
             name: 'Edmonton',
             nameZh: '埃德蒙顿',
+            bgGradient: ['#1c4532', '#276749'], // 深绿色调(草原)
             path: [
                 { x: 0, y: 80 },
                 { x: 620, y: 80 },
@@ -3110,6 +3173,7 @@ var TowerDefense = (function() {
 
     // v1.1: 选中的塔（用于回收）
     var selectedTower = null;
+    var hoveredTower = null;  // v2.1: 鼠标悬浮的塔
 
     // v1.1: 升级系统配置
     var UPGRADE_THRESHOLDS = [0, 5, 15, 30]; // 0级, 1级, 2级, 3级所需击杀数
@@ -3244,24 +3308,24 @@ var TowerDefense = (function() {
     };
 
     // Enemy definitions (可扩展接口 - 敌人类型可绑定标签)
+    // v2.2: 平衡调整 - 基于模拟器推演，HP约1.5倍原值
     var ENEMY_TYPES = {
         basic: {
             id: 'basic',
             name: 'Bug',
-            hp: 30,
-            speed: 1,
+            hp: 45,  // 原30，平衡后45（需要2-3座塔配合）
+            speed: 1.0,
             reward: 10,
             color: '#ef4444',
             size: 12,
-            // 团队元素预留接口
             label: 'Bug'
         },
         fast: {
             id: 'fast',
             name: '快速Bug',
-            hp: 20,
-            speed: 2,
-            reward: 15,
+            hp: 30,  // 原20，平衡后30
+            speed: 2.0,
+            reward: 12,
             color: '#fbbf24',
             size: 10,
             label: '快Bug'
@@ -3269,9 +3333,9 @@ var TowerDefense = (function() {
         tank: {
             id: 'tank',
             name: '强化Bug',
-            hp: 100,
+            hp: 150,  // 原100，平衡后150
             speed: 0.5,
-            reward: 30,
+            reward: 25,
             color: '#7c3aed',
             size: 18,
             label: '坦克'
@@ -3279,9 +3343,9 @@ var TowerDefense = (function() {
         boss: {
             id: 'boss',
             name: 'Boss',
-            hp: 300,
-            speed: 0.3,
-            reward: 100,
+            hp: 450,  // 原300，平衡后450
+            speed: 0.35,
+            reward: 80,
             color: '#dc2626',
             size: 25,
             label: 'Boss'
@@ -3290,39 +3354,39 @@ var TowerDefense = (function() {
         stealth: {
             id: 'stealth',
             name: '隐形Bug',
-            hp: 25,
-            speed: 1.2,
-            reward: 20,
+            hp: 38,  // 原25，平衡后38
+            speed: 1.5,
+            reward: 15,
             color: '#6366f1',
             size: 11,
             label: '隐身',
-            stealthCycle: 120, // 隐身周期（帧）
-            stealthDuration: 60 // 隐身持续时间（帧）
+            stealthCycle: 120,
+            stealthDuration: 60
         },
         split: {
             id: 'split',
             name: '分裂Bug',
-            hp: 40,
-            speed: 0.8,
-            reward: 25,
+            hp: 60,  // 原40，平衡后60
+            speed: 0.9,
+            reward: 20,
             color: '#f472b6',
             size: 14,
             label: '分裂',
-            splitCount: 2, // 分裂数量
-            splitType: 'basic' // 分裂后的敌人类型
+            splitCount: 2,
+            splitType: 'basic'
         },
         healer: {
             id: 'healer',
             name: '治愈Bug',
-            hp: 35,
-            speed: 0.7,
-            reward: 30,
+            hp: 52,  // 原35，平衡后52
+            speed: 0.8,
+            reward: 25,
             color: '#34d399',
             size: 13,
             label: '治愈',
-            healRadius: 50, // 治愈范围
-            healAmount: 1, // 每帧治愈量
-            healCooldown: 60 // 治愈冷却
+            healRadius: 50,
+            healAmount: 1,  // 适度治愈
+            healCooldown: 60  // 标准频率
         }
     };
 
@@ -3370,54 +3434,113 @@ var TowerDefense = (function() {
         return config;
     }
 
-    // Initialize game
+    // Initialize game - optimized with async chunks to prevent UI freeze
+    var isInitializing = false;
     function init() {
+        if (isInitializing) return; // Prevent multiple init calls
+        isInitializing = true;
+
         try {
             canvas = document.getElementById('towerCanvas');
             if (!canvas) {
                 console.error('Tower defense canvas not found');
+                isInitializing = false;
                 return;
             }
             ctx = canvas.getContext('2d');
             if (!ctx) {
                 console.error('Could not get 2D context');
+                isInitializing = false;
                 return;
             }
 
+            // Phase 1: Core canvas events (immediate)
             canvas.addEventListener('click', handleCanvasClick);
             canvas.addEventListener('mousemove', handleMouseMove);
             canvas.addEventListener('touchstart', handleTouch, { passive: false });
-
-            // v1.1: 拖拽放置事件
             canvas.addEventListener('mouseup', handleMouseUp);
             canvas.addEventListener('mouseleave', handleMouseLeave);
 
-            // v1.1: 为塔选择按钮添加拖拽事件
-            setupDragEvents();
+            // Phase 2: Setup and restart (deferred to allow UI update)
+            setTimeout(function() {
+                try {
+                    setupDragEvents();
+                    initAudio();
+                    updateWavePreview();
+                    preloadMapBackgrounds(); // 预加载地图背景
+                } catch (e) { console.warn('Phase 2 init failed:', e); }
 
-            // v1.2: 初始化音效系统
-            initAudio();
+                // Phase 3: Heavy systems (further deferred)
+                setTimeout(function() {
+                    try {
+                        setupKeyboardShortcuts();
+                        initAchievements();
+                    } catch (e) { console.warn('Phase 3 init failed:', e); }
 
-            // v1.2: 初始化波次预告
-            updateWavePreview();
-
-            // v1.3: 初始化快捷键
-            setupKeyboardShortcuts();
-
-            // v2.0: 初始化成就系统 (wrap in try-catch for localStorage errors)
-            try { initAchievements(); } catch (e) { console.warn('Achievements init failed:', e); }
-
-            // v2.0: 初始化天赋系统
-            try { initTalents(); } catch (e) { console.warn('Talents init failed:', e); }
-
-            // v2.0: 初始化每日挑战
-            try { initDailyChallenge(); } catch (e) { console.warn('Daily challenge init failed:', e); }
-
-            restart();
-            requestAnimationFrame(gameLoop);
+                    // Phase 4: Final systems and start game
+                    setTimeout(function() {
+                        try {
+                            initTalents();
+                            initDailyChallenge();
+                            restart();
+                            requestAnimationFrame(gameLoop);
+                        } catch (e) { console.warn('Phase 4 init failed:', e); }
+                        isInitializing = false;
+                    }, 10);
+                }, 10);
+            }, 10);
         } catch (e) {
             console.error('Tower defense init failed:', e);
+            isInitializing = false;
         }
+    }
+
+    // 预加载地图背景图片
+    function preloadMapBackgrounds() {
+        for (var i = 0; i < MAPS.length; i++) {
+            var map = MAPS[i];
+            if (map.bgImage) {
+                var img = new Image();
+                img.src = map.bgImage;
+                mapBgImages[map.name] = img;
+            }
+        }
+    }
+
+    // 绘制地图背景
+    function drawMapBackground() {
+        var currentMap = MAPS[currentMapIndex];
+        if (!currentMap) return;
+
+        ctx.save();
+        ctx.globalAlpha = bgImageOpacity;
+
+        // 优先使用背景图片
+        if (currentMap.bgImage) {
+            var img = mapBgImages[currentMap.name];
+            if (img && img.complete) {
+                // 计算缩放比例，保持图片覆盖整个画布
+                var scale = Math.max(W / img.width, H / img.height);
+                var scaledW = img.width * scale;
+                var scaledH = img.height * scale;
+                var offsetX = (W - scaledW) / 2;
+                var offsetY = (H - scaledH) / 2;
+                ctx.drawImage(img, offsetX, offsetY, scaledW, scaledH);
+                ctx.restore();
+                return;
+            }
+        }
+
+        // 使用渐变色作为备用背景
+        if (currentMap.bgGradient) {
+            var gradient = ctx.createLinearGradient(0, 0, W, H);
+            gradient.addColorStop(0, currentMap.bgGradient[0]);
+            gradient.addColorStop(1, currentMap.bgGradient[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        ctx.restore();
     }
 
     // v1.3: 快捷键系统
@@ -3526,8 +3649,11 @@ var TowerDefense = (function() {
         if (!isDragging || !dragTowerType) return;
 
         var rect = canvas.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var y = e.clientY - rect.top;
+        // v2.2: 修复坐标缩放问题
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        var x = (e.clientX - rect.left) * scaleX;
+        var y = (e.clientY - rect.top) * scaleY;
 
         // 检查是否可以放置
         var towerDef = TOWER_TYPES[dragTowerType];
@@ -3623,8 +3749,11 @@ var TowerDefense = (function() {
         if (gameOver) return;
 
         var rect = canvas.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var y = e.clientY - rect.top;
+        // v2.2: 修复坐标缩放问题
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        var x = (e.clientX - rect.left) * scaleX;
+        var y = (e.clientY - rect.top) * scaleY;
 
         // v2.0: 技能目标选择
         if (pendingSkill === 'meteor') {
@@ -3795,11 +3924,16 @@ var TowerDefense = (function() {
 
     // Start wave
     function startWave() {
-        if (gameOver || waveInProgress) return;
+        if (gameOver) return;
+        // v2.1: 无尽模式允许连续开始波次（不检查waveInProgress）
+        if (!isEndlessMode && waveInProgress) return;
 
         wave++;
         waveInProgress = true;
-        document.getElementById('startWaveBtn').disabled = true;
+        // v2.1: 无尽模式保持按钮可用
+        if (!isEndlessMode) {
+            document.getElementById('startWaveBtn').disabled = true;
+        }
 
         // v2.0: 记录波次开始时的生命值（用于完美防守成就）
         livesAtWaveStart = lives;
@@ -4406,6 +4540,9 @@ var TowerDefense = (function() {
         ctx.fillStyle = '#1a1a2e';
         ctx.fillRect(0, 0, W, H);
 
+        // 绘制城市地图背景（半透明）
+        drawMapBackground();
+
         drawPath();
         drawTowers();
         drawPoisonAuras(); // v1.3: 毒气塔范围
@@ -4419,6 +4556,9 @@ var TowerDefense = (function() {
 
         // v1.1: 选中塔的回收按钮
         drawSellButton();
+
+        // v2.1: 塔台悬浮信息
+        drawTowerTooltip();
 
         if (debugMode) {
             drawDebug();
@@ -4512,11 +4652,93 @@ var TowerDefense = (function() {
         ctx.fillText('卖 💰' + sellPrice, t.x, t.y - 44);
     }
 
+    // v2.1: 绘制塔台悬浮信息提示框
+    function drawTowerTooltip() {
+        if (!hoveredTower || isDragging) return;
+
+        var t = hoveredTower;
+        var towerDef = TOWER_TYPES[t.type];
+
+        // 获取塔的特点描述
+        var traits = [];
+        if (towerDef.slowEffect) traits.push('减速' + Math.round((1 - towerDef.slowEffect) * 100) + '%');
+        if (towerDef.splashRadius) traits.push('溅射范围' + towerDef.splashRadius);
+        if (towerDef.isBeam) traits.push('穿透光束');
+        if (towerDef.isAura) traits.push('持续毒伤');
+        if (towerDef.chainCount) traits.push('链式闪电×' + towerDef.chainCount);
+        if (towerDef.range >= 150) traits.push('超远射程');
+        if (traits.length === 0) traits.push('标准攻击');
+
+        var traitText = traits.join(' | ');
+        var levelStars = t.level > 0 ? ' ' + '★'.repeat(t.level) : '';
+
+        // 准备文本内容
+        var lines = [
+            towerDef.icon + ' ' + towerDef.name + levelStars,
+            '⚔️ 攻击力: ' + Math.round(t.damage),
+            '🎯 射程: ' + Math.round(t.range),
+            '💡 ' + traitText
+        ];
+
+        // 测量最大宽度
+        ctx.font = '12px sans-serif';
+        var maxWidth = 0;
+        for (var i = 0; i < lines.length; i++) {
+            var w = ctx.measureText(lines[i]).width;
+            if (w > maxWidth) maxWidth = w;
+        }
+
+        var boxWidth = maxWidth + 20;
+        var boxHeight = lines.length * 18 + 12;
+
+        // 计算提示框位置（避免超出画布）
+        var boxX = t.x + 25;
+        var boxY = t.y - boxHeight / 2;
+        if (boxX + boxWidth > W) boxX = t.x - boxWidth - 25;
+        if (boxY < 5) boxY = 5;
+        if (boxY + boxHeight > H - 5) boxY = H - boxHeight - 5;
+
+        // 绘制提示框背景
+        ctx.fillStyle = 'rgba(30, 30, 50, 0.95)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6);
+        ctx.fill();
+
+        // 边框
+        ctx.strokeStyle = t.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6);
+        ctx.stroke();
+
+        // 绘制文字
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        for (var i = 0; i < lines.length; i++) {
+            ctx.fillStyle = i === 0 ? '#fbbf24' : '#fff';
+            ctx.font = i === 0 ? 'bold 12px sans-serif' : '11px sans-serif';
+            ctx.fillText(lines[i], boxX + 10, boxY + 8 + i * 18);
+        }
+    }
+
     function drawPath() {
         // v1.3: 使用当前地图的路径
         var currentPath = MAPS[currentMapIndex].path;
 
-        ctx.strokeStyle = 'rgba(102, 126, 234, 0.3)';
+        // 先绘制深色底层（不透明），遮挡背景图片
+        ctx.strokeStyle = '#1a1a2e';
+        ctx.lineWidth = 44;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(currentPath[0].x, currentPath[0].y);
+        for (var i = 1; i < currentPath.length; i++) {
+            ctx.lineTo(currentPath[i].x, currentPath[i].y);
+        }
+        ctx.stroke();
+
+        // 路径主体
+        ctx.strokeStyle = 'rgba(102, 126, 234, 0.4)';
         ctx.lineWidth = 40;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -4528,7 +4750,7 @@ var TowerDefense = (function() {
         ctx.stroke();
 
         // Path border
-        ctx.strokeStyle = 'rgba(102, 126, 234, 0.5)';
+        ctx.strokeStyle = 'rgba(102, 126, 234, 0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(currentPath[0].x, currentPath[0].y);
@@ -4747,8 +4969,23 @@ var TowerDefense = (function() {
     var mouseX = -100, mouseY = -100;
     function handleMouseMove(e) {
         var rect = canvas.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
+        // v2.2: 修复坐标缩放问题 - 将显示坐标转换为canvas内部坐标
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        mouseX = (e.clientX - rect.left) * scaleX;
+        mouseY = (e.clientY - rect.top) * scaleY;
+
+        // v2.1: 检测鼠标是否悬浮在塔上
+        hoveredTower = null;
+        for (var i = 0; i < towers.length; i++) {
+            var t = towers[i];
+            var dx = t.x - mouseX;
+            var dy = t.y - mouseY;
+            if (Math.sqrt(dx * dx + dy * dy) < 22) {
+                hoveredTower = t;
+                break;
+            }
+        }
     }
 
     // Touch support
@@ -4766,19 +5003,29 @@ var TowerDefense = (function() {
         debugMode = !debugMode;
     }
 
-    // Game loop
-    function gameLoop() {
-        if (!canvas) return;
+    // Game loop - optimized for performance
+    var lastFrameTime = 0;
+    var frameInterval = 1000 / 60; // Target 60 FPS
 
-        // Skip heavy rendering when game is hidden (saves resources)
+    function gameLoop(timestamp) {
+        if (!canvas || !ctx) return;
+
+        // Skip when game is hidden to save resources
         var towerGame = document.getElementById('towerGame');
         var isHidden = towerGame && towerGame.classList.contains('hidden');
 
-        if (isHidden && isPaused) {
-            // When hidden and paused, use longer interval to save CPU
-            setTimeout(function() { requestAnimationFrame(gameLoop); }, 200);
+        if (isHidden) {
+            // When hidden, use much longer interval to minimize CPU
+            setTimeout(function() { requestAnimationFrame(gameLoop); }, 500);
             return;
         }
+
+        // Frame rate limiting for smoother performance
+        if (timestamp - lastFrameTime < frameInterval * 0.9) {
+            requestAnimationFrame(gameLoop);
+            return;
+        }
+        lastFrameTime = timestamp;
 
         if (!gameOver && !isPaused) {
             // v1.2: 根据游戏速度执行多次更新

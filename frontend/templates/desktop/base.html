@@ -20,6 +20,10 @@
         <span class="header-title">Boris Life</span>
     </div>
     <div class="header-right">
+        <div class="header-user" id="header-user" style="display:none;">
+            <span class="user-name" id="user-display-name"></span>
+            <button class="logout-btn" onclick="handleLogout()" title="登出">退出</button>
+        </div>
         <div class="header-avatar" id="header-avatar" onclick="nextAvatarQuote()">
             <span class="avatar-text">B</span>
             <div class="avatar-quote-tooltip" id="avatar-quote-tooltip">
@@ -185,20 +189,33 @@
     var particles = [];
     var fragments = [];
     var fishes = [];
-    var fishFragments = []; // 小鱼碎片
+    var fishFragments = [];
     var particleCount = parseInt(localStorage.getItem('particleCount')) || 6;
-    var fishCount = parseInt(localStorage.getItem('fishCount')) || 3;
+    var fishCount = 0; // 小鱼功能已隐藏
+
+    // ===== 小球可调参数（可在控制台修改） =====
+    window.ballConfig = {
+        repelRadius: 180,    // 鼠标感应半径
+        repelForce: 12,      // 排斥力度 (1-15)
+        maxSpeed: 10,        // 最大速度
+        friction: 0.97,      // 摩擦力 (0.9-0.999, 越大越滑)
+        tailLength: 5        // 尾巴长度
+    };
+    // 使用方法: 在浏览器控制台输入 ballConfig.repelForce = 8 然后回车
     var maxTailLength = 12; // 缩短尾巴最大长度
     var colors = ['#60a5fa', '#34d399', '#f87171', '#fbbf24', '#a78bfa', '#f472b6'];
     var fishColors = ['#ff9966', '#66ccff', '#99ff99'];
 
     var mouse = { x: -1000, y: -1000 };
-    var mouseRepelRadius = 100;
-    var mouseRepelForce = 4;
 
-    var fearThreshold = 60;
-    var explodeThreshold = 150;
-    var reuniteDelay = 120;
+    var fearThreshold = 15;      // 更快开始颤抖
+    var explodeThreshold = 45;   // 更快分裂
+    var reuniteDelay = 60;       // 更快合成
+
+    // 从闪电生成的小球队列
+    var spawningParticles = [];
+    var spawnCheckInterval = 30; // 每30帧检查一次
+    var spawnCheckCounter = 0;
 
     function resizeCanvas() {
         // 全屏宽度以支持L形区域
@@ -227,7 +244,7 @@
         // 随机初始角度（偏向横向，像鱼在浴缸游动）
         var baseAngle = Math.random() < 0.5 ? 0 : Math.PI;
         var angle = baseAngle + (Math.random() - 0.5) * Math.PI / 3;
-        var speed = 0.3 + Math.random() * 0.3;
+        var speed = 1.5 + Math.random() * 1.0; // 更强的初始速度，保证不会静止
         // 大部分粒子生成在顶栏区域（80%概率）
         var spawnInHeader = Math.random() < 0.8;
         var spawnX = x !== undefined ? x : (spawnInHeader ? Math.random() * canvas.width : Math.random() * sidebarWidth);
@@ -255,6 +272,7 @@
         fragments = [];
         fishes = [];
         fishFragments = [];
+        spawningParticles = [];
         for (var i = 0; i < particleCount; i++) {
             particles.push(createParticle(i));
         }
@@ -263,9 +281,92 @@
         }
     }
 
+    // 从闪电图标生成新小球（螺旋飞出效果）
+    function spawnFromLightning() {
+        var logo = document.getElementById('app-logo');
+        var logoRect = logo ? logo.getBoundingClientRect() : { left: 30, top: 24, width: 24, height: 24 };
+        var centerX = logoRect.left + logoRect.width / 2;
+        var centerY = logoRect.top + logoRect.height / 2;
+
+        var index = particles.length + spawningParticles.length;
+        var sp = {
+            x: centerX,
+            y: centerY,
+            centerX: centerX,
+            centerY: centerY,
+            angle: Math.random() * Math.PI * 2,
+            radius: 5,
+            spiralSpeed: 0.15 + Math.random() * 0.05,
+            expandSpeed: 0.8,
+            rotations: 0,
+            maxRotations: 2,
+            color: colors[index % colors.length],
+            size: 4 + Math.random() * 2,
+            alpha: 0.9,
+            trail: []
+        };
+        spawningParticles.push(sp);
+    }
+
+    // 更新螺旋生成中的小球
+    function updateSpawningParticle(sp) {
+        sp.trail.push({ x: sp.x, y: sp.y });
+        if (sp.trail.length > 10) sp.trail.shift();
+
+        sp.angle += sp.spiralSpeed;
+        sp.radius += sp.expandSpeed;
+        sp.rotations += sp.spiralSpeed / (Math.PI * 2);
+
+        sp.x = sp.centerX + Math.cos(sp.angle) * sp.radius;
+        sp.y = sp.centerY + Math.sin(sp.angle) * sp.radius;
+
+        // 完成螺旋后转为正常小球
+        if (sp.rotations >= sp.maxRotations) {
+            var newP = createParticle(particles.length, sp.x, sp.y);
+            newP.vx = Math.cos(sp.angle) * 3;
+            newP.vy = Math.sin(sp.angle) * 3;
+            newP.color = sp.color;
+            newP.trail = sp.trail.slice();
+            particles.push(newP);
+            return false; // 移除spawning
+        }
+        return true;
+    }
+
+    // 绘制螺旋生成中的小球
+    function drawSpawningParticle(sp) {
+        // 尾巴
+        for (var i = 0; i < sp.trail.length; i++) {
+            var t = sp.trail[i];
+            var progress = (i + 1) / sp.trail.length;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, sp.size * progress * 0.6, 0, Math.PI * 2);
+            ctx.fillStyle = sp.color;
+            ctx.globalAlpha = sp.alpha * progress * 0.5;
+            ctx.fill();
+        }
+        // 主体
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+        ctx.fillStyle = sp.color;
+        ctx.globalAlpha = sp.alpha;
+        ctx.shadowColor = sp.color;
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+    }
+
+    // 检查并补充小球数量
+    function checkParticleCount() {
+        var totalActive = particles.length + spawningParticles.length;
+        if (totalActive < particleCount) {
+            spawnFromLightning();
+        }
+    }
+
     function createFish(index, x, y, size) {
         var direction = Math.random() < 0.5 ? 1 : -1;
-        var facingAngle = direction > 0 ? 0 : Math.PI;
         // 大部分鱼生成在顶栏区域（80%概率）
         var spawnInHeader = Math.random() < 0.8;
         var spawnX = x !== undefined ? x : (spawnInHeader ? Math.random() * canvas.width : Math.random() * sidebarWidth);
@@ -274,18 +375,11 @@
         return {
             x: spawnX,
             y: spawnY,
-            vx: direction * (0.4 + Math.random() * 0.3),
-            vy: (Math.random() - 0.5) * 0.1,
+            vx: direction * (0.5 + Math.random() * 0.3),
+            vy: (Math.random() - 0.5) * 0.2,
             size: fishSize,
             color: fishColors[index % fishColors.length],
             tailPhase: Math.random() * Math.PI * 2,
-            direction: direction,
-            facingAngle: facingAngle, // 鱼头朝向角度（独立于速度）
-            angle: facingAngle,       // 实际绘制角度
-            backwardTime: 0,          // 倒退计时
-            turnSpeed: 0.15,          // 正常转向速度
-            isEscaping: false,        // 是否正在逃逸
-            escapePhase: 0,           // 逃逸阶段：0=正常，1=倒退中，2=快速转向
             // 边界检测和爆炸相关
             stuckTime: 0,
             isShaking: false,
@@ -364,70 +458,17 @@
     function updateFish(f, index) {
         f.tailPhase += 0.15;
 
+        // 鼠标排斥 - 简单直接
         var dx = f.x - mouse.x;
         var dy = f.y - mouse.y;
         var dist = Math.sqrt(dx * dx + dy * dy);
-        var escapeAngle = Math.atan2(dy, dx); // 逃逸方向（从鼠标指向鱼）
-        var velocityAngle = Math.atan2(f.vy, f.vx);
-
-        // 鼠标排斥与智能逃逸
         if (dist < mouseRepelRadius && dist > 0) {
-            f.isEscaping = true;
-
-            // 计算鱼头朝向与逃逸方向的夹角
-            var angleDiff = normalizeAngle(escapeAngle - f.facingAngle);
-            var isFacingAway = Math.abs(angleDiff) < Math.PI / 2; // 鱼头朝向逃逸方向
-
-            if (isFacingAway) {
-                // 鱼头已经朝向逃逸方向，直接加速逃逸
-                f.escapePhase = 0;
-                var force = (mouseRepelRadius - dist) / mouseRepelRadius * 6;
-                f.vx += (dx / dist) * force;
-                f.vy += (dy / dist) * force;
-            } else {
-                // 鱼头朝向鼠标方向
-                if (f.escapePhase === 0) {
-                    f.escapePhase = 1; // 进入倒退阶段
-                    f.backwardTime = 0;
-                }
-
-                if (f.escapePhase === 1) {
-                    // 倒退阶段：向后移动但不转头
-                    f.backwardTime++;
-                    var backwardForce = (mouseRepelRadius - dist) / mouseRepelRadius * 3;
-                    f.vx += (dx / dist) * backwardForce;
-                    f.vy += (dy / dist) * backwardForce;
-
-                    // 倒退时间限制，超过后快速掉头
-                    if (f.backwardTime > 15 || dist < mouseRepelRadius * 0.5) {
-                        f.escapePhase = 2; // 进入快速转向阶段
-                    }
-                }
-
-                if (f.escapePhase === 2) {
-                    // 快速转向阶段：快速将鱼头转向逃逸方向
-                    var turnAmount = normalizeAngle(escapeAngle - f.facingAngle) * 0.3;
-                    f.facingAngle = normalizeAngle(f.facingAngle + turnAmount);
-
-                    // 同时加速逃逸
-                    var force = (mouseRepelRadius - dist) / mouseRepelRadius * 5;
-                    f.vx += (dx / dist) * force;
-                    f.vy += (dy / dist) * force;
-
-                    // 转向完成后恢复正常
-                    if (Math.abs(normalizeAngle(escapeAngle - f.facingAngle)) < Math.PI / 4) {
-                        f.escapePhase = 0;
-                    }
-                }
-            }
-        } else {
-            // 不在鼠标范围内
-            f.isEscaping = false;
-            f.escapePhase = 0;
-            f.backwardTime = 0;
+            var force = (mouseRepelRadius - dist) / mouseRepelRadius * mouseRepelForce;
+            f.vx += (dx / dist) * force;
+            f.vy += (dy / dist) * force;
         }
 
-        // 检测是否被困
+        // 检测是否被困在边缘
         if (isFishStuckAtEdge(f)) {
             f.stuckTime++;
             if (f.stuckTime > fearThreshold) {
@@ -446,7 +487,7 @@
 
         var inHeader = f.y <= headerHeight;
 
-        // 区域行为
+        // 随机游动
         if (inHeader) {
             f.vy += (Math.random() - 0.5) * 0.02;
             f.vy *= 0.95;
@@ -459,76 +500,70 @@
         f.x += f.vx;
         f.y += f.vy;
 
-        // 速度维持
+        // 速度控制
         var speed = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
         if (speed < 0.3) {
             var angle = inHeader ? (Math.random() < 0.5 ? 0 : Math.PI) : Math.random() * Math.PI * 2;
             f.vx = Math.cos(angle) * 0.5;
             f.vy = Math.sin(angle) * 0.5;
         }
-        var maxSpeed = 4, minSpeed = 0.3; // 提高最大速度
+        var maxSpeed = 4;
         if (speed > maxSpeed) {
             f.vx = (f.vx / speed) * maxSpeed;
             f.vy = (f.vy / speed) * maxSpeed;
         }
-        f.vx *= 0.995;
-        f.vy *= 0.995;
+        f.vx *= 0.99;
+        f.vy *= 0.99;
 
-        // L形拐角处理
-        if (f.y > headerHeight && f.x > sidebarWidth - f.size) {
+        // 严格边界处理 - 确保不超出L形区域
+        var margin = f.size + 2; // 留出边距
+
+        // 顶部边界
+        if (f.y < margin) {
+            f.y = margin;
+            f.vy = Math.abs(f.vy) * 0.8;
+        }
+
+        // 底部边界（只在侧边栏区域有效）
+        if (f.y > canvas.height - margin) {
+            f.y = canvas.height - margin;
+            f.vy = -Math.abs(f.vy) * 0.8;
+        }
+
+        // 左边界
+        if (f.x < margin) {
+            f.x = margin;
+            f.vx = Math.abs(f.vx) * 0.8;
+        }
+
+        // 右边界 - 根据Y位置决定
+        if (f.y <= headerHeight) {
+            // 在顶栏区域：可以用全宽
+            if (f.x > canvas.width - margin) {
+                f.x = canvas.width - margin;
+                f.vx = -Math.abs(f.vx) * 0.8;
+            }
+        } else {
+            // 在侧边栏区域：限制在侧边栏宽度内
+            if (f.x > sidebarWidth - margin) {
+                f.x = sidebarWidth - margin;
+                f.vx = -Math.abs(f.vx) * 0.8;
+            }
+        }
+
+        // L形拐角处理 - 防止进入禁区
+        if (f.y > headerHeight && f.x > sidebarWidth - margin) {
+            // 推回到最近的边界
             var overY = f.y - headerHeight;
-            var overX = f.x - (sidebarWidth - f.size);
+            var overX = f.x - (sidebarWidth - margin);
             if (overY < overX) {
-                f.y = headerHeight - f.size;
-                f.vy = -Math.abs(f.vy);
+                f.y = headerHeight - margin;
+                f.vy = -Math.abs(f.vy) * 0.5;
             } else {
-                f.x = sidebarWidth - f.size;
-                f.vx = -Math.abs(f.vx);
+                f.x = sidebarWidth - margin;
+                f.vx = -Math.abs(f.vx) * 0.5;
             }
         }
-
-        // L形边界处理
-        var newBounds = getLShapeBounds(f.y);
-        if (f.x < f.size) {
-            f.x = f.size;
-            f.vx = Math.abs(f.vx);
-        } else if (f.x > newBounds.maxX - f.size) {
-            f.x = newBounds.maxX - f.size;
-            f.vx = -Math.abs(f.vx);
-        }
-        if (f.y < f.size) {
-            f.y = f.size;
-            f.vy = Math.abs(f.vy);
-        } else if (f.y > canvas.height - f.size) {
-            f.y = canvas.height - f.size;
-            f.vy = -Math.abs(f.vy);
-        }
-
-        // 更新鱼头朝向：逐渐转向速度方向（不在逃逸时）
-        velocityAngle = Math.atan2(f.vy, f.vx);
-        if (!f.isEscaping || f.escapePhase === 0) {
-            var targetAngle = velocityAngle;
-            var angleDiff = normalizeAngle(targetAngle - f.facingAngle);
-
-            // 检查是否在倒游（鱼头与速度方向相反）
-            var isBackward = Math.abs(angleDiff) > Math.PI / 2;
-
-            if (isBackward) {
-                f.backwardTime++;
-                // 倒游时间超过限制，快速掉头
-                if (f.backwardTime > 30) {
-                    f.facingAngle = normalizeAngle(f.facingAngle + angleDiff * 0.2);
-                }
-            } else {
-                f.backwardTime = Math.max(0, f.backwardTime - 1);
-                // 正常转向
-                f.facingAngle = normalizeAngle(f.facingAngle + angleDiff * f.turnSpeed);
-            }
-        }
-
-        // 设置最终绘制角度
-        f.angle = f.facingAngle;
-        f.direction = Math.cos(f.angle) >= 0 ? 1 : -1;
 
         return true;
     }
@@ -556,28 +591,22 @@
         ff.life--;
         ff.angle = Math.atan2(ff.vy, ff.vx);
 
-        // L形拐角处理
-        if (ff.y > headerHeight && ff.x > sidebarWidth - ff.size) {
-            var overY = ff.y - headerHeight;
-            var overX = ff.x - (sidebarWidth - ff.size);
-            if (overY < overX) {
-                ff.y = headerHeight - ff.size;
-                ff.vy = -Math.abs(ff.vy);
-            } else {
-                ff.x = sidebarWidth - ff.size;
-                ff.vx = -Math.abs(ff.vx);
-            }
+        // 严格边界处理
+        var margin = ff.size + 2;
+
+        if (ff.y < margin) { ff.y = margin; ff.vy = Math.abs(ff.vy); }
+        if (ff.y > canvas.height - margin) { ff.y = canvas.height - margin; ff.vy = -Math.abs(ff.vy); }
+        if (ff.x < margin) { ff.x = margin; ff.vx = Math.abs(ff.vx); }
+
+        if (ff.y <= headerHeight) {
+            if (ff.x > canvas.width - margin) { ff.x = canvas.width - margin; ff.vx = -Math.abs(ff.vx); }
+        } else {
+            if (ff.x > sidebarWidth - margin) { ff.x = sidebarWidth - margin; ff.vx = -Math.abs(ff.vx); }
         }
 
-        // 边界
-        var bounds = getLShapeBounds(ff.y);
-        if (ff.x < ff.size || ff.x > bounds.maxX - ff.size) {
-            ff.vx = -ff.vx;
-            ff.x = Math.max(ff.size, Math.min(bounds.maxX - ff.size, ff.x));
-        }
-        if (ff.y < ff.size || ff.y > canvas.height - ff.size) {
-            ff.vy = -ff.vy;
-            ff.y = Math.max(ff.size, Math.min(canvas.height - ff.size, ff.y));
+        if (ff.y > headerHeight && ff.x > sidebarWidth - margin) {
+            ff.x = sidebarWidth - margin;
+            ff.vx = -Math.abs(ff.vx);
         }
     }
 
@@ -597,28 +626,31 @@
         ctx.save();
         ctx.translate(drawX, drawY);
 
-        var angle = f.angle || 0;
-        var flipY = Math.abs(angle) > Math.PI / 2;
-        if (flipY) {
-            ctx.rotate(angle + Math.PI);
-            ctx.scale(1, -1);
-        } else {
-            ctx.rotate(angle);
+        // 简化朝向逻辑：根据水平速度方向决定鱼头朝向
+        var goingLeft = f.vx < 0;
+        var tiltAngle = Math.atan2(f.vy, Math.abs(f.vx)); // 倾斜角度（基于正向速度）
+
+        if (goingLeft) {
+            ctx.scale(-1, 1); // 水平翻转，鱼头朝左
         }
+        ctx.rotate(tiltAngle); // 根据垂直速度倾斜
 
         var s = f.size;
         var tailSwing = Math.sin(f.tailPhase) * 0.3;
+
+        // 鱼身（椭圆）
         ctx.beginPath();
         ctx.ellipse(0, 0, s * 1.2, s * 0.6, 0, 0, Math.PI * 2);
         ctx.fillStyle = f.color;
         ctx.globalAlpha = 0.85 * transMult;
-        // 震动时加红色光晕
         if (f.isShaking) {
             ctx.shadowColor = '#ff0000';
             ctx.shadowBlur = 15;
         }
         ctx.fill();
         ctx.shadowBlur = 0;
+
+        // 尾巴
         ctx.beginPath();
         ctx.moveTo(-s * 1.1, 0);
         ctx.lineTo(-s * 2, -s * 0.5 + tailSwing * s);
@@ -627,15 +659,20 @@
         ctx.fillStyle = f.color;
         ctx.globalAlpha = 0.7 * transMult;
         ctx.fill();
+
+        // 眼白
         ctx.beginPath();
-        ctx.arc(s * 0.5, -s * 0.1, s * 0.15, 0, Math.PI * 2);
+        ctx.arc(s * 0.5, -s * 0.15, s * 0.18, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
         ctx.globalAlpha = 1 * transMult;
         ctx.fill();
+
+        // 眼珠
         ctx.beginPath();
-        ctx.arc(s * 0.55, -s * 0.1, s * 0.08, 0, Math.PI * 2);
+        ctx.arc(s * 0.55, -s * 0.15, s * 0.09, 0, Math.PI * 2);
         ctx.fillStyle = '#333333';
         ctx.fill();
+
         ctx.restore();
         ctx.globalAlpha = 1;
     }
@@ -645,14 +682,13 @@
         ctx.save();
         ctx.translate(ff.x, ff.y);
 
-        var angle = ff.angle || 0;
-        var flipY = Math.abs(angle) > Math.PI / 2;
-        if (flipY) {
-            ctx.rotate(angle + Math.PI);
-            ctx.scale(1, -1);
-        } else {
-            ctx.rotate(angle);
+        // 简化朝向逻辑
+        var goingLeft = ff.vx < 0;
+        var tiltAngle = Math.atan2(ff.vy, Math.abs(ff.vx));
+        if (goingLeft) {
+            ctx.scale(-1, 1);
         }
+        ctx.rotate(tiltAngle);
 
         var s = ff.size;
         var tailSwing = Math.sin(ff.tailPhase) * 0.4;
@@ -682,7 +718,7 @@
                        p.y < edgeMargin || p.y > canvas.height - edgeMargin;
         var dx = p.x - mouse.x;
         var dy = p.y - mouse.y;
-        var nearMouse = Math.sqrt(dx * dx + dy * dy) < mouseRepelRadius + 20;
+        var nearMouse = Math.sqrt(dx * dx + dy * dy) < window.ballConfig.repelRadius + 20;
         return nearEdge && nearMouse;
     }
 
@@ -722,9 +758,12 @@
                 group.forEach(function(g) { cx += g.fragment.x; cy += g.fragment.y; });
                 cx /= group.length; cy /= group.length;
 
-                var newP = createParticle(parseInt(parentIndex), cx, cy);
-                newP.vx = (Math.random() - 0.5) * 2;
-                newP.vy = (Math.random() - 0.5) * 2;
+                var newP = createParticle(particles.length, cx, cy);
+                // 确保有足够的初始速度
+                var angle = Math.random() * Math.PI * 2;
+                var speed = 1.5 + Math.random() * 1.0;
+                newP.vx = Math.cos(angle) * speed;
+                newP.vy = Math.sin(angle) * speed;
                 particles.push(newP);
 
                 group.forEach(function(g) { toRemove.push(g.index); });
@@ -736,10 +775,11 @@
 
     function updateParticle(p, index) {
         var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        var cfg = window.ballConfig;
 
         // 尾巴长度：基础长度 + 速度加成
         var dynamicTailLength = Math.floor(5 + speed * 2);
-        dynamicTailLength = Math.max(5, Math.min(maxTailLength, dynamicTailLength));
+        dynamicTailLength = Math.max(5, Math.min(cfg.tailLength, dynamicTailLength));
 
         p.trail.push({ x: p.x, y: p.y });
         while (p.trail.length > dynamicTailLength) p.trail.shift();
@@ -762,37 +802,44 @@
             p.shakeOffset.y = 0;
         }
 
-        // 鼠标排斥（小球快速逃逸）
+        var cfg = window.ballConfig;
+        var inHeader = p.y <= headerHeight;
+
+        // ===== 鼠标排斥 - 最高优先级 =====
         var dx = p.x - mouse.x;
         var dy = p.y - mouse.y;
         var dist = Math.sqrt(dx * dx + dy * dy);
-        var isEscaping = dist < mouseRepelRadius && dist > 0;
+        var isEscaping = false;
 
-        if (isEscaping) {
-            var force = (mouseRepelRadius - dist) / mouseRepelRadius * 10; // 大幅增强逃逸力度
+        if (dist < cfg.repelRadius && dist > 0) {
+            isEscaping = true;
+            // 距离越近，力越大（二次方关系，更敏感）
+            var ratio = 1 - dist / cfg.repelRadius;
+            var force = ratio * ratio * cfg.repelForce * 1.5;
             p.vx += (dx / dist) * force;
             p.vy += (dy / dist) * force;
         }
 
-        var inHeader = p.y <= headerHeight;
-
-        // 只在非逃逸时进行平滑转向
+        // 自由游动（仅在不逃跑时生效）
         if (!isEscaping) {
             p.nextTurnTime--;
             if (p.nextTurnTime <= 0) {
                 var currentAngle = Math.atan2(p.vy, p.vx);
                 if (inHeader) {
-                    if (Math.random() < 0.7) {
+                    // 顶栏：主要左右游动，偶尔转向
+                    if (Math.random() < 0.6) {
                         var baseAngle = Math.cos(currentAngle) > 0 ? 0 : Math.PI;
-                        if (Math.random() < 0.15) baseAngle += Math.PI;
-                        p.targetAngle = baseAngle + (Math.random() - 0.5) * Math.PI / 3;
+                        if (Math.random() < 0.2) baseAngle += Math.PI; // 20%概率掉头
+                        p.targetAngle = baseAngle + (Math.random() - 0.5) * Math.PI / 2;
                     } else {
-                        p.targetAngle = currentAngle + (Math.random() - 0.5) * Math.PI * 0.4;
+                        p.targetAngle = currentAngle + (Math.random() - 0.5) * Math.PI * 0.6;
                     }
                 } else {
+                    // 侧边栏：自由方向
                     p.targetAngle = Math.random() * Math.PI * 2;
                 }
-                p.nextTurnTime = 80 + Math.floor(Math.random() * 120);
+                // 更频繁地改变方向，让运动更活泼
+                p.nextTurnTime = 40 + Math.floor(Math.random() * 80);
             }
 
             var currentAngle = Math.atan2(p.vy, p.vx);
@@ -800,78 +847,100 @@
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
-            if (Math.abs(angleDiff) > 0.01) {
-                var newAngle = currentAngle + angleDiff * p.turnSpeed;
-                var targetSpeed = 0.4 + Math.random() * 0.3;
-                p.vx = Math.cos(newAngle) * Math.max(speed, targetSpeed);
-                p.vy = Math.sin(newAngle) * Math.max(speed, targetSpeed);
-            }
+            // 更快的转向速度
+            var newAngle = currentAngle + angleDiff * p.turnSpeed * 1.5;
+            // 保持一定的游动速度
+            var targetSpeed = 1.0 + Math.random() * 1.0;
+            var newSpeed = Math.max(speed, targetSpeed);
+            p.vx = Math.cos(newAngle) * newSpeed;
+            p.vy = Math.sin(newAngle) * newSpeed;
         }
 
-        if (inHeader) p.vy *= 0.95;
+        if (inHeader && !isEscaping) p.vy *= 0.92; // 稍微限制垂直运动
 
-        // 速度规则
+        // 速度控制
         speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        var maxSpeed = 5, minSpeed = 0.3; // 提高最大速度到5
+        var maxSpeed = isEscaping ? cfg.maxSpeed * 1.5 : cfg.maxSpeed;
+        var minSpeed = 1.0; // 提高最低速度，保持活跃
         if (speed > maxSpeed) {
             p.vx = (p.vx / speed) * maxSpeed;
             p.vy = (p.vy / speed) * maxSpeed;
         } else if (speed < minSpeed) {
-            var angle = inHeader ? (Math.random() < 0.5 ? 0 : Math.PI) : Math.random() * Math.PI * 2;
-            p.vx = Math.cos(angle) * 0.5;
-            p.vy = Math.sin(angle) * 0.5;
+            // 速度太慢时，给一个随机推力
+            var angle = inHeader ? (Math.random() < 0.5 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.5 : Math.random() * Math.PI * 2;
+            var boost = minSpeed + Math.random() * 0.5;
+            p.vx = Math.cos(angle) * boost;
+            p.vy = Math.sin(angle) * boost;
         }
 
-        p.vx *= 0.995; // 与小鱼一致
-        p.vy *= 0.995;
+        // 摩擦力（逃跑时减少摩擦，平时也保持较低摩擦让运动更流畅）
+        var friction = isEscaping ? 0.96 : 0.995;
+        p.vx *= friction;
+        p.vy *= friction;
 
-        p.x += p.vx;
-        p.y += p.vy;
+        // ===== 安全检查：确保速度有效 =====
+        if (isNaN(p.vx) || isNaN(p.vy) || !isFinite(p.vx) || !isFinite(p.vy)) {
+            var safeAngle = Math.random() * Math.PI * 2;
+            p.vx = Math.cos(safeAngle) * 1.5;
+            p.vy = Math.sin(safeAngle) * 1.5;
+        }
 
-        // L形边缘平滑反弹
-        var bounced = false;
+        // 边界安全距离
+        var margin = p.radius + 2;
 
-        // 首先处理L形拐角：检测是否进入禁区（y > headerHeight 且 x > sidebarWidth）
-        if (p.y > headerHeight && p.x > sidebarWidth - p.radius) {
-            // 计算进入禁区的程度，决定从哪个方向弹回
-            var overY = p.y - headerHeight;
-            var overX = p.x - (sidebarWidth - p.radius);
-            if (overY < overX) {
-                // Y方向越界较少，推回到顶栏
-                p.y = headerHeight - p.radius;
+        // ===== 预测式边界检查 - 在移动前检查目标位置 =====
+        var nextX = p.x + p.vx;
+        var nextY = p.y + p.vy;
+
+        // 检查是否会进入L形禁区（主内容区域）
+        var wouldEnterForbidden = nextY > headerHeight - margin && nextX > sidebarWidth - margin;
+        var currentlyInHeader = p.y <= headerHeight;
+        var currentlyInSidebar = p.x <= sidebarWidth;
+
+        if (wouldEnterForbidden) {
+            if (currentlyInHeader && nextY > headerHeight - margin) {
+                // 从顶栏向下移动，阻止
+                p.vy = -Math.abs(p.vy) * 0.5;
+                nextY = headerHeight - margin;
+            }
+            if (currentlyInSidebar && nextX > sidebarWidth - margin) {
+                // 从侧边栏向右移动，阻止
+                p.vx = -Math.abs(p.vx) * 0.5;
+                nextX = sidebarWidth - margin;
+            }
+        }
+
+        // 外边界检查
+        if (nextX < margin) { nextX = margin; p.vx = Math.abs(p.vx) * 0.8; }
+        if (nextY < margin) { nextY = margin; p.vy = Math.abs(p.vy) * 0.8; }
+
+        // 根据当前区域检查右边界和底边界
+        if (nextY <= headerHeight) {
+            // 在顶栏区域
+            if (nextX > canvas.width - margin) { nextX = canvas.width - margin; p.vx = -Math.abs(p.vx) * 0.8; }
+        } else {
+            // 在侧边栏区域
+            if (nextX > sidebarWidth - margin) { nextX = sidebarWidth - margin; p.vx = -Math.abs(p.vx) * 0.8; }
+            if (nextY > canvas.height - margin) { nextY = canvas.height - margin; p.vy = -Math.abs(p.vy) * 0.8; }
+        }
+
+        // 应用位置
+        p.x = nextX;
+        p.y = nextY;
+
+        // ===== 最终安全检查 - 强制将任何越界粒子推回 =====
+        if (p.y > headerHeight && p.x > sidebarWidth) {
+            // 已经在禁区内，立即推回
+            if (p.y - headerHeight < p.x - sidebarWidth) {
+                p.y = headerHeight - margin;
                 p.vy = -Math.abs(p.vy);
             } else {
-                // X方向越界较少，推回到侧边栏
-                p.x = sidebarWidth - p.radius;
+                p.x = sidebarWidth - margin;
                 p.vx = -Math.abs(p.vx);
             }
-            bounced = true;
         }
 
-        // 常规边界检查
-        var bounds = getLShapeBounds(p.y);
-        if (p.x - p.radius < 0) {
-            p.x = p.radius;
-            p.vx = Math.abs(p.vx);
-            bounced = true;
-        } else if (p.x + p.radius > bounds.maxX) {
-            p.x = bounds.maxX - p.radius;
-            p.vx = -Math.abs(p.vx);
-            bounced = true;
-        }
-        if (p.y - p.radius < 0) {
-            p.y = p.radius;
-            p.vy = Math.abs(p.vy);
-            bounced = true;
-        } else if (p.y + p.radius > canvas.height) {
-            p.y = canvas.height - p.radius;
-            p.vy = -Math.abs(p.vy);
-            bounced = true;
-        }
-        if (bounced) {
-            p.targetAngle = Math.atan2(p.vy, p.vx);
-        }
-
+        p.targetAngle = Math.atan2(p.vy, p.vx);
         return true;
     }
 
@@ -898,28 +967,22 @@
         f.y += f.vy;
         f.life--;
 
-        // L形拐角处理
-        if (f.y > headerHeight && f.x > sidebarWidth - f.radius) {
-            var overY = f.y - headerHeight;
-            var overX = f.x - (sidebarWidth - f.radius);
-            if (overY < overX) {
-                f.y = headerHeight - f.radius;
-                f.vy = -Math.abs(f.vy);
-            } else {
-                f.x = sidebarWidth - f.radius;
-                f.vx = -Math.abs(f.vx);
-            }
+        // 严格边界处理
+        var margin = f.radius + 2;
+
+        if (f.y < margin) { f.y = margin; f.vy = Math.abs(f.vy); }
+        if (f.y > canvas.height - margin) { f.y = canvas.height - margin; f.vy = -Math.abs(f.vy); }
+        if (f.x < margin) { f.x = margin; f.vx = Math.abs(f.vx); }
+
+        if (f.y <= headerHeight) {
+            if (f.x > canvas.width - margin) { f.x = canvas.width - margin; f.vx = -Math.abs(f.vx); }
+        } else {
+            if (f.x > sidebarWidth - margin) { f.x = sidebarWidth - margin; f.vx = -Math.abs(f.vx); }
         }
 
-        // L形边界
-        var bounds = getLShapeBounds(f.y);
-        if (f.x - f.radius < 0 || f.x + f.radius > bounds.maxX) {
-            f.vx = -f.vx;
-            f.x = Math.max(f.radius, Math.min(bounds.maxX - f.radius, f.x));
-        }
-        if (f.y - f.radius < 0 || f.y + f.radius > canvas.height) {
-            f.vy = -f.vy;
-            f.y = Math.max(f.radius, Math.min(canvas.height - f.radius, f.y));
+        if (f.y > headerHeight && f.x > sidebarWidth - margin) {
+            f.x = sidebarWidth - margin;
+            f.vx = -Math.abs(f.vx);
         }
     }
 
@@ -928,22 +991,49 @@
         var drawY = p.y + (p.shakeOffset ? p.shakeOffset.y : 0);
         var transMult = getTransparencyMultiplier(drawY);
 
-        // 彗星尾巴效果：从头部向尾部逐渐变小变淡
-        if (p.trail.length > 1) {
-            for (var i = 0; i < p.trail.length; i++) {
-                var t = p.trail[i];
-                var progress = (i + 1) / p.trail.length; // 0→1，尾部是0，头部是1
-                var trailTrans = getTransparencyMultiplier(t.y);
-                var size = p.radius * progress * 0.8; // 尾部小，头部大
-                var alpha = p.alpha * progress * progress * 0.5; // 尾部淡，头部亮
+        // 平滑彗星尾巴效果：使用渐变路径
+        if (p.trail.length > 2) {
+            // 从尾部到头部绘制平滑渐变
+            for (var i = 1; i < p.trail.length; i++) {
+                var t0 = p.trail[i - 1];
+                var t1 = p.trail[i];
+                var progress = i / p.trail.length;
+                var nextProgress = (i + 1) / p.trail.length;
+
+                // 线条宽度：从细到粗
+                var width0 = p.radius * 2 * (progress - 1/p.trail.length) * 0.9;
+                var width1 = p.radius * 2 * progress * 0.9;
+
+                // 透明度：从淡到浓，使用三次方让渐变更平滑
+                var alpha = p.alpha * progress * progress * progress * 0.6;
+                var trailTrans = getTransparencyMultiplier((t0.y + t1.y) / 2);
+
+                // 绘制渐变线段
                 ctx.beginPath();
-                ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
+                ctx.moveTo(t0.x, t0.y);
+                ctx.lineTo(t1.x, t1.y);
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = Math.max(1, (width0 + width1) / 2);
+                ctx.lineCap = 'round';
                 ctx.globalAlpha = alpha * trailTrans;
-                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 连接尾巴末端到球体，确保平滑过渡
+            if (p.trail.length > 0) {
+                var lastTrail = p.trail[p.trail.length - 1];
+                ctx.beginPath();
+                ctx.moveTo(lastTrail.x, lastTrail.y);
+                ctx.lineTo(drawX, drawY);
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = p.radius * 1.6;
+                ctx.lineCap = 'round';
+                ctx.globalAlpha = p.alpha * 0.5 * transMult;
+                ctx.stroke();
             }
         }
 
+        // 主球体（带光晕）
         ctx.beginPath();
         ctx.arc(drawX, drawY, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
@@ -979,35 +1069,63 @@
     }
 
     function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        try {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 先画小鱼（在底层）- 倒序遍历以便安全删除
-        for (var i = fishes.length - 1; i >= 0; i--) {
-            if (updateFish(fishes[i], i)) {
-                drawFish(fishes[i]);
+            // ===== 每帧开始时：强制验证所有粒子速度 =====
+            for (var j = 0; j < particles.length; j++) {
+                var p = particles[j];
+                var spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                // 修复无效速度或静止粒子
+                if (isNaN(spd) || !isFinite(spd) || spd < 0.5) {
+                    var angle = Math.random() * Math.PI * 2;
+                    var newSpeed = 1.5 + Math.random() * 1.0;
+                    p.vx = Math.cos(angle) * newSpeed;
+                    p.vy = Math.sin(angle) * newSpeed;
+                }
             }
-        }
 
-        // 小鱼碎片
-        fishFragments.forEach(function(ff) {
-            updateFishFragment(ff);
-            drawFishFragment(ff);
-        });
-        reuniteFishFragments();
-
-        // 粒子
-        for (var i = particles.length - 1; i >= 0; i--) {
-            if (updateParticle(particles[i], i)) {
-                drawParticle(particles[i]);
+            // 定期检查小球数量
+            spawnCheckCounter++;
+            if (spawnCheckCounter >= spawnCheckInterval) {
+                spawnCheckCounter = 0;
+                checkParticleCount();
             }
-        }
 
-        // 粒子碎片
-        fragments.forEach(function(f) {
-            updateFragment(f);
-            drawFragment(f);
-        });
-        reuniteFragments();
+            // 螺旋生成中的小球
+            for (var i = spawningParticles.length - 1; i >= 0; i--) {
+                if (updateSpawningParticle(spawningParticles[i])) {
+                    drawSpawningParticle(spawningParticles[i]);
+                } else {
+                    spawningParticles.splice(i, 1);
+                }
+            }
+
+            // 粒子 - 复制数组避免splice问题
+            var particlesToProcess = particles.slice();
+            var indicesToRemove = [];
+
+            for (var i = 0; i < particlesToProcess.length; i++) {
+                var p = particlesToProcess[i];
+                // 找到当前实际索引
+                var actualIndex = particles.indexOf(p);
+                if (actualIndex === -1) continue; // 已被移除
+
+                if (updateParticle(p, actualIndex)) {
+                    drawParticle(p);
+                }
+            }
+
+            // 粒子碎片
+            for (var i = 0; i < fragments.length; i++) {
+                updateFragment(fragments[i]);
+                drawFragment(fragments[i]);
+            }
+            reuniteFragments();
+
+        } catch (e) {
+            console.error('Animation error:', e);
+        }
 
         requestAnimationFrame(animate);
     }
@@ -1018,9 +1136,10 @@
 
     window.addEventListener('resize', resizeCanvas);
 
-    // 鼠标追踪：在L形区域内生效（顶栏全宽 + 侧边栏）
+    // 鼠标追踪：在L形区域内生效（顶栏全宽 + 侧边栏）+ 边缘扩展
     document.addEventListener('mousemove', function(e) {
-        var inLShape = (e.clientY <= headerHeight) || (e.clientX <= sidebarWidth);
+        var extend = 120; // 扩展检测范围，让鼠标更容易触发小球逃逸
+        var inLShape = (e.clientY <= headerHeight + extend) || (e.clientX <= sidebarWidth + extend);
         if (inLShape) {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
@@ -1028,34 +1147,70 @@
             mouse.x = -1000;
             mouse.y = -1000;
         }
-    });
+    }, { passive: true });
 
     document.addEventListener('mouseleave', function() {
         mouse.x = -1000;
         mouse.y = -1000;
-    });
+    }, { passive: true });
 
-    // 点击闪电设置小球和小鱼数量
+    // 点击闪电设置小球参数 - 表格形式
     if (logo) {
         logo.addEventListener('click', function(e) {
             e.stopPropagation();
-            var input = prompt('设置小球数量 (1-20)，当前: ' + particleCount, particleCount);
-            if (input !== null) {
-                var num = parseInt(input);
-                if (!isNaN(num) && num >= 1 && num <= 20) {
-                    particleCount = num;
-                    localStorage.setItem('particleCount', num);
+
+            // 创建设置弹窗
+            var overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+            var cfg = window.ballConfig;
+            var dialog = document.createElement('div');
+            dialog.style.cssText = 'background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:16px;min-width:280px;color:#fff;font-size:14px;';
+            dialog.innerHTML =
+                '<div style="font-size:16px;font-weight:bold;margin-bottom:12px;color:#fbbf24;">⚡ 小球设置</div>' +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr><td style="padding:6px 8px;color:#aaa;">数量</td><td><input id="cfg-count" type="number" min="1" max="20" value="' + particleCount + '" style="width:60px;padding:4px;background:#2a2a3e;border:1px solid #444;color:#fff;border-radius:4px;"></td><td style="padding:6px 8px;color:#666;font-size:12px;">建议: 6</td></tr>' +
+                '<tr><td style="padding:6px 8px;color:#aaa;">感应半径</td><td><input id="cfg-radius" type="number" min="50" max="200" value="' + cfg.repelRadius + '" style="width:60px;padding:4px;background:#2a2a3e;border:1px solid #444;color:#fff;border-radius:4px;"></td><td style="padding:6px 8px;color:#666;font-size:12px;">建议: 180</td></tr>' +
+                '<tr><td style="padding:6px 8px;color:#aaa;">排斥力度</td><td><input id="cfg-force" type="number" min="1" max="15" value="' + cfg.repelForce + '" style="width:60px;padding:4px;background:#2a2a3e;border:1px solid #444;color:#fff;border-radius:4px;"></td><td style="padding:6px 8px;color:#666;font-size:12px;">建议: 12</td></tr>' +
+                '<tr><td style="padding:6px 8px;color:#aaa;">最大速度</td><td><input id="cfg-speed" type="number" min="3" max="12" value="' + cfg.maxSpeed + '" style="width:60px;padding:4px;background:#2a2a3e;border:1px solid #444;color:#fff;border-radius:4px;"></td><td style="padding:6px 8px;color:#666;font-size:12px;">建议: 10</td></tr>' +
+                '<tr><td style="padding:6px 8px;color:#aaa;">摩擦力</td><td><input id="cfg-friction" type="number" min="0.9" max="0.999" step="0.01" value="' + cfg.friction + '" style="width:60px;padding:4px;background:#2a2a3e;border:1px solid #444;color:#fff;border-radius:4px;"></td><td style="padding:6px 8px;color:#666;font-size:12px;">建议: 0.97</td></tr>' +
+                '<tr><td style="padding:6px 8px;color:#aaa;">尾巴长度</td><td><input id="cfg-tail" type="number" min="3" max="25" value="' + cfg.tailLength + '" style="width:60px;padding:4px;background:#2a2a3e;border:1px solid #444;color:#fff;border-radius:4px;"></td><td style="padding:6px 8px;color:#666;font-size:12px;">建议: 5</td></tr>' +
+                '</table>' +
+                '<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">' +
+                '<button id="cfg-cancel" style="padding:6px 12px;background:#444;border:none;color:#fff;border-radius:4px;cursor:pointer;">取消</button>' +
+                '<button id="cfg-save" style="padding:6px 12px;background:#fbbf24;border:none;color:#000;border-radius:4px;cursor:pointer;font-weight:bold;">保存</button>' +
+                '</div>';
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            // 点击背景关闭
+            overlay.addEventListener('click', function(ev) {
+                if (ev.target === overlay) document.body.removeChild(overlay);
+            });
+
+            // 取消按钮
+            document.getElementById('cfg-cancel').addEventListener('click', function() {
+                document.body.removeChild(overlay);
+            });
+
+            // 保存按钮
+            document.getElementById('cfg-save').addEventListener('click', function() {
+                var newCount = Math.max(1, Math.min(20, parseInt(document.getElementById('cfg-count').value) || 5));
+                cfg.repelRadius = Math.max(50, Math.min(200, parseInt(document.getElementById('cfg-radius').value) || 100));
+                cfg.repelForce = Math.max(1, Math.min(15, parseInt(document.getElementById('cfg-force').value) || 5));
+                cfg.maxSpeed = Math.max(3, Math.min(12, parseInt(document.getElementById('cfg-speed').value) || 5));
+                cfg.friction = Math.max(0.9, Math.min(0.999, parseFloat(document.getElementById('cfg-friction').value) || 0.99));
+                cfg.tailLength = Math.max(5, Math.min(25, parseInt(document.getElementById('cfg-tail').value) || 12));
+
+                if (newCount !== particleCount) {
+                    particleCount = newCount;
+                    localStorage.setItem('particleCount', newCount);
+                    initParticles();
                 }
-            }
-            var fishInput = prompt('设置小鱼数量 (1-10)，当前: ' + fishCount, fishCount);
-            if (fishInput !== null) {
-                var fishNum = parseInt(fishInput);
-                if (!isNaN(fishNum) && fishNum >= 1 && fishNum <= 10) {
-                    fishCount = fishNum;
-                    localStorage.setItem('fishCount', fishNum);
-                }
-            }
-            initParticles();
+
+                document.body.removeChild(overlay);
+            });
         });
     }
 })();

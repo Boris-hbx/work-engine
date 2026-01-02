@@ -536,27 +536,28 @@ function confirmRestore() {
 
 function deleteBackup(name, isAuto) {
     var message = isAuto ?
-        'This is an auto-backup. Are you sure you want to delete it?' :
-        'Are you sure you want to delete this backup?';
+        '这是自动备份，确定要删除吗？' :
+        '确定要删除这个备份吗？';
 
-    if (!confirm(message)) return;
-
-    fetch('/api/backup/delete/' + name, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: isAuto })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        if (data.success) {
-            loadBackups();
-        } else {
-            alert('Failed to delete: ' + data.error);
-        }
-    })
-    .catch(function(err) {
-        alert('Error: ' + err.message);
-    });
+    window.AppUtils.showConfirm(message, function() {
+        fetch('/api/backup/delete/' + name, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ force: isAuto })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                loadBackups();
+                window.AppUtils.showToast('已删除', 'success');
+            } else {
+                window.AppUtils.showToast('删除失败: ' + data.error, 'error');
+            }
+        })
+        .catch(function(err) {
+            window.AppUtils.showToast('错误: ' + err.message, 'error');
+        });
+    }, { confirmText: '删除', danger: true });
 }
 
 function previewFile(backupName, filename) {

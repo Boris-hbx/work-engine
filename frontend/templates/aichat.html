@@ -210,22 +210,22 @@
     }
 
     function clearChat() {
-        if (!confirm('确定要清空所有对话吗？')) return;
+        window.AppUtils.showConfirm('确定要清空所有对话吗？', function() {
+            var container = document.getElementById('chat-messages');
+            container.innerHTML =
+                '<div class="welcome-message">' +
+                    '<div class="welcome-icon">✨</div>' +
+                    '<h2>欢迎使用智脑中枢</h2>' +
+                    '<p>选择一个AI模型，开始你的智能对话之旅</p>' +
+                    '<div class="quick-prompts">' +
+                        '<button class="quick-prompt" onclick="useQuickPrompt(\'帮我分析一下今天的工作安排\')">📋 分析工作安排</button>' +
+                        '<button class="quick-prompt" onclick="useQuickPrompt(\'给我一些提高效率的建议\')">💡 效率建议</button>' +
+                        '<button class="quick-prompt" onclick="useQuickPrompt(\'帮我写一封邮件\')">✉️ 写邮件</button>' +
+                    '</div>' +
+                '</div>';
 
-        var container = document.getElementById('chat-messages');
-        container.innerHTML =
-            '<div class="welcome-message">' +
-                '<div class="welcome-icon">✨</div>' +
-                '<h2>欢迎使用智脑中枢</h2>' +
-                '<p>选择一个AI模型，开始你的智能对话之旅</p>' +
-                '<div class="quick-prompts">' +
-                    '<button class="quick-prompt" onclick="useQuickPrompt(\'帮我分析一下今天的工作安排\')">📋 分析工作安排</button>' +
-                    '<button class="quick-prompt" onclick="useQuickPrompt(\'给我一些提高效率的建议\')">💡 效率建议</button>' +
-                    '<button class="quick-prompt" onclick="useQuickPrompt(\'帮我写一封邮件\')">✉️ 写邮件</button>' +
-                '</div>' +
-            '</div>';
-
-        chatMessages = [];
+            chatMessages = [];
+        }, { confirmText: '清空', danger: true });
     }
 
     function saveConfig() {

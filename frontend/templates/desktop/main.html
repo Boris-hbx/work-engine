@@ -16,6 +16,14 @@
 
     <!-- Stats Row -->
     <div class="stats-row">
+        <!-- 天气卡片 -->
+        <div class="stat-card weather-card" id="weather-card">
+            <div class="stat-icon" id="weather-icon">☁️</div>
+            <div class="stat-info">
+                <span class="stat-value" id="weather-temp">--°C</span>
+                <span class="stat-label" id="weather-desc">滑铁卢</span>
+            </div>
+        </div>
         <a href="{{ url_for('todo') }}?tab=today" class="stat-card stat-card-link">
             <div class="stat-icon">📋</div>
             <div class="stat-info">
@@ -220,6 +228,17 @@
 
 .stat-card-link:hover {
     background: linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));
+}
+
+/* 天气卡片特殊样式 */
+.weather-card {
+    background: linear-gradient(135deg, rgba(96,165,250,0.1), rgba(52,211,153,0.1));
+    border: 1px solid rgba(96,165,250,0.2);
+}
+
+.weather-card .stat-icon {
+    background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(52,211,153,0.2));
+    font-size: 2rem;
 }
 
 .stat-icon {
@@ -459,6 +478,25 @@
         .then(r => r.json())
         .then(data => {
             document.getElementById('stat-bubbles').textContent = (data.bubbles || []).length;
+        });
+
+    // 天气
+    fetch('/api/weather')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('weather-icon').textContent = data.icon || '☁️';
+            document.getElementById('weather-temp').textContent = (data.temp_c || '--') + '°C';
+            document.getElementById('weather-desc').textContent = data.description || '滑铁卢';
+
+            // 更新全局天气状态（供小鱼动画使用）
+            if (window.currentWeather) {
+                window.currentWeather.type = data.weather_type || 'cloudy';
+                window.currentWeather.temp = data.temp_c;
+                window.currentWeather.updated = true;
+            }
+        })
+        .catch(function() {
+            document.getElementById('weather-desc').textContent = '无法获取';
         });
 })();
 </script>

@@ -212,12 +212,12 @@
     }
 
     function clearAll() {
-        if (confirm('确定要清空所有数据吗？')) {
+        window.AppUtils.showConfirm('确定要清空所有数据吗？', function() {
             document.getElementById('data-body').innerHTML = '';
             colorIndex = 0;
             updateChart();
             showToast('已清空', 'success');
-        }
+        }, { confirmText: '清空', danger: true });
     }
 
     function getData() {
@@ -643,18 +643,7 @@
     }
 
     function showToast(message, type) {
-        var container = document.getElementById('toast-container');
-        var toast = document.createElement('div');
-        toast.className = 'toast toast-' + type;
-        toast.textContent = message;
-        container.appendChild(toast);
-
-        setTimeout(function() {
-            toast.classList.add('toast-hide');
-            setTimeout(function() {
-                toast.remove();
-            }, 300);
-        }, 2000);
+        AppUtils.showToast(message, type);
     }
 
     function shuffleQuote() {
@@ -713,24 +702,29 @@
     }
 
     function createNew() {
-        if (currentBubbleId && !confirm('当前有未保存的更改，确定要新建吗？')) {
-            return;
+        var doCreate = function() {
+            currentBubbleId = null;
+            document.getElementById('chart-title').value = '未命名图表';
+            document.getElementById('chart-desc').value = '';
+            document.getElementById('x-axis-label').value = '投入成本';
+            document.getElementById('y-axis-label').value = '恢复效果';
+            document.getElementById('data-body').innerHTML = '';
+            document.getElementById('chart-info').style.display = 'none';
+            document.getElementById('btn-duplicate').style.display = 'none';
+            document.getElementById('btn-delete').style.display = 'none';
+            colorIndex = 0;
+            addRow('示例1', 30, 60, 40);
+            addRow('示例2', 50, 40, 60);
+            addRow('示例3', 70, 80, 30);
+            loadSavedList();
+            showToast('已创建新图表', 'success');
+        };
+
+        if (currentBubbleId) {
+            window.AppUtils.showConfirm('当前有未保存的更改，确定要新建吗？', doCreate, { confirmText: '新建' });
+        } else {
+            doCreate();
         }
-        currentBubbleId = null;
-        document.getElementById('chart-title').value = '未命名图表';
-        document.getElementById('chart-desc').value = '';
-        document.getElementById('x-axis-label').value = '投入成本';
-        document.getElementById('y-axis-label').value = '恢复效果';
-        document.getElementById('data-body').innerHTML = '';
-        document.getElementById('chart-info').style.display = 'none';
-        document.getElementById('btn-duplicate').style.display = 'none';
-        document.getElementById('btn-delete').style.display = 'none';
-        colorIndex = 0;
-        addRow('示例1', 30, 60, 40);
-        addRow('示例2', 50, 40, 60);
-        addRow('示例3', 70, 80, 30);
-        loadSavedList();
-        showToast('已创建新图表', 'success');
     }
 
     function saveChart() {
@@ -826,20 +820,18 @@
     function deleteChart() {
         if (!currentBubbleId) return;
 
-        if (!confirm('确定要删除这个图表吗？此操作不可恢复。')) {
-            return;
-        }
-
-        fetch('/api/bubbles/' + currentBubbleId, { method: 'DELETE' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('已删除', 'success');
-                    createNew();
-                } else {
-                    showToast('删除失败: ' + data.error, 'error');
-                }
-            });
+        window.AppUtils.showConfirm('确定要删除这个图表吗？此操作不可恢复。', function() {
+            fetch('/api/bubbles/' + currentBubbleId, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('已删除', 'success');
+                        createNew();
+                    } else {
+                        showToast('删除失败: ' + data.error, 'error');
+                    }
+                });
+        }, { confirmText: '删除', danger: true });
     }
 
     function updateChartInfo(bubble) {

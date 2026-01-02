@@ -3,6 +3,27 @@
 {% block title %}Todo - Time Management{% endblock %}
 
 {% block content %}
+    <style>
+    /* 任务编辑输入框样式 */
+    .task-edit-input {
+        width: 100%;
+        padding: 4px 8px;
+        border: 2px solid var(--accent-color, #4f46e5);
+        border-radius: 4px;
+        font-size: inherit;
+        font-family: inherit;
+        background: var(--bg-color, #fff);
+        color: var(--text-color, #1f2937);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    .task-edit-input:focus {
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+    .task-text.editing {
+        padding: 0;
+    }
+    </style>
     <div class="page-header compact">
         <div class="header-left">
             <h1 class="page-title">My Tasks</h1>
@@ -734,70 +755,127 @@
 
         var newCompleted = !item.completed;
 
-        // 如果是标记为完成，需要确认
-        if (newCompleted) {
-            if (!confirm('确定要将此任务标记为已完成吗？')) return;
-        }
-
-        fetch('/api/todos/' + itemId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ completed: newCompleted })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                allItems = allItems.map(function(i) {
-                    if (i.id === itemId) {
-                        return data.item;
-                    }
-                    return i;
-                });
-                updateCounts();
-                renderItems();
-                showToast(newCompleted ? '已完成' : '已恢复', 'success');
-            }
-        });
-    }
-
-    function deleteTask(itemId) {
-        if (!confirm('确定要删除这个任务吗？')) return;
-
-        fetch('/api/todos/' + itemId, { method: 'DELETE' })
+        var doToggle = function() {
+            fetch('/api/todos/' + itemId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed: newCompleted })
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    allItems = allItems.filter(function(i) { return i.id !== itemId; });
+                    allItems = allItems.map(function(i) {
+                        if (i.id === itemId) {
+                            return data.item;
+                        }
+                        return i;
+                    });
                     updateCounts();
                     renderItems();
-                    showToast('已删除', 'success');
+                    showToast(newCompleted ? '已完成' : '已恢复', 'success');
                 }
             });
+        };
+
+        // 如果是标记为完成，需要确认
+        if (newCompleted) {
+            window.AppUtils.showConfirm('确定要将此任务标记为已完成吗？', doToggle, { confirmText: '完成' });
+        } else {
+            doToggle();
+        }
+    }
+
+    function deleteTask(itemId) {
+        window.AppUtils.showConfirm('确定要删除这个任务吗？', function() {
+            fetch('/api/todos/' + itemId, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        allItems = allItems.filter(function(i) { return i.id !== itemId; });
+                        updateCounts();
+                        renderItems();
+                        showToast('已删除', 'success');
+                    }
+                });
+        }, { confirmText: '删除', danger: true });
     }
 
     function editTask(itemId) {
         var item = allItems.find(function(i) { return i.id === itemId; });
         if (!item) return;
 
-        var newText = prompt('编辑任务内容:', item.text);
-        if (newText === null || newText.trim() === '') return;
+        var taskElement = document.querySelector('.task-item[data-id="' + itemId + '"]');
+        if (!taskElement) return;
 
-        fetch('/api/todos/' + itemId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: newText.trim() })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                allItems = allItems.map(function(i) {
-                    if (i.id === itemId) {
-                        i.text = newText.trim();
-                    }
-                    return i;
-                });
-                renderItems();
-                showToast('已更新', 'success');
+        var textElement = taskElement.querySelector('.task-text');
+        if (!textElement || textElement.classList.contains('editing')) return;
+
+        var originalText = item.text;
+
+        // 创建编辑输入框
+        var editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.className = 'task-edit-input';
+        editInput.value = originalText;
+
+        // 替换文本为输入框
+        textElement.classList.add('editing');
+        textElement.innerHTML = '';
+        textElement.appendChild(editInput);
+        editInput.focus();
+        editInput.select();
+
+        // 保存函数
+        function saveEdit() {
+            var newText = editInput.value.trim();
+            if (!newText || newText === originalText) {
+                cancelEdit();
+                return;
+            }
+
+            fetch('/api/todos/' + itemId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: newText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    allItems = allItems.map(function(i) {
+                        if (i.id === itemId) {
+                            i.text = newText;
+                        }
+                        return i;
+                    });
+                    renderItems();
+                    showToast('已更新', 'success');
+                } else {
+                    cancelEdit();
+                    showToast('更新失败', 'error');
+                }
+            })
+            .catch(function() {
+                cancelEdit();
+                showToast('更新失败', 'error');
+            });
+        }
+
+        // 取消编辑函数
+        function cancelEdit() {
+            textElement.classList.remove('editing');
+            textElement.innerHTML = escapeHtml(originalText);
+        }
+
+        // 事件监听
+        editInput.addEventListener('blur', saveEdit);
+        editInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                editInput.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                editInput.removeEventListener('blur', saveEdit);
+                cancelEdit();
             }
         });
     }
@@ -959,18 +1037,7 @@
     }
 
     function showToast(message, type) {
-        var container = document.getElementById('toast-container');
-        var toast = document.createElement('div');
-        toast.className = 'toast toast-' + type;
-        toast.textContent = message;
-        container.appendChild(toast);
-
-        setTimeout(function() {
-            toast.classList.add('toast-hide');
-            setTimeout(function() {
-                toast.remove();
-            }, 300);
-        }, 2000);
+        AppUtils.showToast(message, type);
     }
 
     // Search functionality

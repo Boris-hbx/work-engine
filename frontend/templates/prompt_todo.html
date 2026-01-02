@@ -3,6 +3,402 @@
 {% block title %}待执行Prompt - Time Management{% endblock %}
 
 {% block content %}
+<style>
+/* 工具栏样式 */
+.prompt-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.toolbar-left, .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 模板下拉菜单 */
+.template-dropdown {
+    position: relative;
+}
+
+.btn-template {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-template:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.template-icon {
+    font-size: 14px;
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.template-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.template-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 300px;
+    background: var(--card-bg, white);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.template-dropdown.open .template-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.template-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid var(--border-light, #eee);
+}
+
+.template-item:last-child {
+    border-bottom: none;
+}
+
+.template-item:first-child {
+    border-radius: 12px 12px 0 0;
+}
+
+.template-item:last-child {
+    border-radius: 0 0 12px 12px;
+}
+
+.template-item:hover {
+    background: var(--hover-bg, #f5f7fa);
+}
+
+.template-item-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.template-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.template-item-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #333);
+}
+
+.template-item-desc {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+/* 模型选择器 */
+.model-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.model-selector-label {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+    white-space: nowrap;
+}
+
+.model-select {
+    padding: 6px 28px 6px 10px;
+    border: 1px solid var(--border-light, #ddd);
+    border-radius: 6px;
+    background: var(--card-bg, white);
+    font-size: 13px;
+    color: var(--text-primary, #333);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    min-width: 140px;
+    transition: all 0.2s ease;
+}
+
+.model-select:hover {
+    border-color: #667eea;
+}
+
+.model-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.model-select option {
+    padding: 8px;
+}
+
+.model-select option[data-default] {
+    font-weight: 600;
+}
+
+/* AI 优化按钮 */
+.btn-ai-optimize {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-ai-optimize:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+}
+
+.btn-ai-optimize:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-ai-optimize.loading {
+    background: linear-gradient(135deg, #a0a0a0 0%, #808080 100%);
+}
+
+.btn-ai-optimize.loading .ai-icon {
+    animation: sparkle 1s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.ai-icon {
+    font-size: 14px;
+}
+
+/* AI 优化弹窗 */
+.ai-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.ai-modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ai-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    background: var(--card-bg, white);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    z-index: 2001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-modal.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.ai-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-light, #eee);
+}
+
+.ai-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-primary, #333);
+}
+
+.ai-modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--hover-bg, #f5f5f5);
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-secondary, #666);
+    transition: all 0.2s ease;
+}
+
+.ai-modal-close:hover {
+    background: #ff4757;
+    color: white;
+}
+
+.ai-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.ai-modal-section {
+    margin-bottom: 20px;
+}
+
+.ai-modal-section:last-child {
+    margin-bottom: 0;
+}
+
+.ai-modal-section label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #333);
+    margin-bottom: 8px;
+}
+
+.ai-original-prompt {
+    padding: 12px 16px;
+    background: var(--hover-bg, #f5f7fa);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary, #666);
+    white-space: pre-wrap;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.ai-optimized-prompt {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-light, #e0e0e0);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 200px;
+    transition: border-color 0.2s ease;
+}
+
+.ai-optimized-prompt:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.ai-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-light, #eee);
+}
+
+.btn-ai-cancel {
+    padding: 10px 20px;
+    border: 1px solid var(--border-light, #ddd);
+    background: white;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-ai-cancel:hover {
+    background: var(--hover-bg, #f5f5f5);
+}
+
+.btn-ai-apply {
+    padding: 10px 20px;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-ai-apply:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+    .prompt-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-left, .toolbar-right {
+        justify-content: center;
+    }
+
+    .template-menu {
+        width: 100%;
+        left: 0;
+        right: 0;
+    }
+}
+</style>
     <div class="page-header compact">
         <div class="header-left">
             <h1 class="page-title">待执行Prompt</h1>
@@ -34,6 +430,62 @@
                 <span class="input-title">添加待执行Prompt</span>
                 <span class="auto-time" id="current-time"></span>
             </div>
+            <!-- 工具栏：模板和 AI 优化 -->
+            <div class="prompt-toolbar">
+                <div class="toolbar-left">
+                    <div class="template-dropdown">
+                        <button class="btn-template" onclick="toggleTemplateDropdown()">
+                            <span class="template-icon">📝</span>
+                            <span>插入模板</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="template-menu" id="template-menu">
+                            <div class="template-item" onclick="insertTemplate('feature')">
+                                <span class="template-item-icon">🚀</span>
+                                <div class="template-item-info">
+                                    <span class="template-item-title">新功能开发</span>
+                                    <span class="template-item-desc">包含功能描述、验收标准、技术约束</span>
+                                </div>
+                            </div>
+                            <div class="template-item" onclick="insertTemplate('bugfix')">
+                                <span class="template-item-icon">🐛</span>
+                                <div class="template-item-info">
+                                    <span class="template-item-title">Bug 修复</span>
+                                    <span class="template-item-desc">包含问题描述、复现步骤、期望结果</span>
+                                </div>
+                            </div>
+                            <div class="template-item" onclick="insertTemplate('optimize')">
+                                <span class="template-item-icon">⚡</span>
+                                <div class="template-item-info">
+                                    <span class="template-item-title">性能优化</span>
+                                    <span class="template-item-desc">包含优化目标、当前状态、测量方式</span>
+                                </div>
+                            </div>
+                            <div class="template-item" onclick="insertTemplate('ui')">
+                                <span class="template-item-icon">🎨</span>
+                                <div class="template-item-info">
+                                    <span class="template-item-title">UI/样式调整</span>
+                                    <span class="template-item-desc">包含调整位置、期望效果、兼容要求</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <div class="model-selector">
+                        <span class="model-selector-label">模型:</span>
+                        <select class="model-select" id="model-select" onchange="saveModelChoice()">
+                            <option value="deepseek" data-default>DeepSeek (默认)</option>
+                            <option value="doubao">豆包</option>
+                            <option value="openai">OpenAI GPT</option>
+                        </select>
+                    </div>
+                    <button class="btn-ai-optimize" onclick="aiOptimizePrompt()" id="btn-ai-optimize">
+                        <span class="ai-icon">✨</span>
+                        <span>AI 优化 Prompt</span>
+                    </button>
+                </div>
+            </div>
             <textarea class="prompt-input" id="prompt-input" placeholder="输入待执行的Prompt内容..." rows="3"></textarea>
             <div class="prompt-input-footer">
                 <div class="auto-tags">
@@ -41,6 +493,29 @@
                     <span class="tags-preview">按 Ctrl+Enter 快速添加</span>
                 </div>
                 <button class="btn-add-prompt" onclick="addPromptTodo()">添加</button>
+            </div>
+        </div>
+
+        <!-- AI 优化预览弹窗 -->
+        <div class="ai-modal-overlay" id="ai-modal-overlay" onclick="closeAiModal()"></div>
+        <div class="ai-modal" id="ai-modal">
+            <div class="ai-modal-header">
+                <h3>AI 优化结果</h3>
+                <button class="ai-modal-close" onclick="closeAiModal()">&times;</button>
+            </div>
+            <div class="ai-modal-body">
+                <div class="ai-modal-section">
+                    <label>原始 Prompt：</label>
+                    <div class="ai-original-prompt" id="ai-original-prompt"></div>
+                </div>
+                <div class="ai-modal-section">
+                    <label>优化后 Prompt（可编辑）：</label>
+                    <textarea class="ai-optimized-prompt" id="ai-optimized-prompt" rows="10"></textarea>
+                </div>
+            </div>
+            <div class="ai-modal-footer">
+                <button class="btn-ai-cancel" onclick="closeAiModal()">取消</button>
+                <button class="btn-ai-apply" onclick="applyOptimizedPrompt()">应用优化结果</button>
             </div>
         </div>
 
@@ -66,6 +541,190 @@
     <script>
     var allTodos = [];
     var currentFilter = 'all';
+
+    // Prompt 模板定义
+    var promptTemplates = {
+        feature: `【功能名称】: [简短名称]
+
+【功能描述】:
+[详细描述要实现什么功能，解决什么问题]
+
+【验收标准】:
+1. [可验证的具体条件1]
+2. [可验证的具体条件2]
+3. [可验证的具体条件3]
+
+【技术约束】:
+- [技术限制或要求]
+- [兼容性要求]
+- [性能要求]
+
+【参考资料】:
+- 相似功能: [参考位置]
+- 截图: PrtSc/xxx.png`,
+
+        bugfix: `【问题描述】: [简要描述问题]
+
+【复现步骤】:
+1. [步骤1]
+2. [步骤2]
+3. [步骤3]
+
+【实际结果】: [描述出错的情况]
+
+【期望结果】: [描述正确的行为]
+
+【影响范围】: [哪些功能/页面受影响]
+
+【参考截图】: PrtSc/error_xxx.png`,
+
+        optimize: `【优化目标】: [要优化什么]
+
+【当前状态】: [现在的性能指标]
+
+【目标指标】: [期望达到的性能]
+
+【可接受方案】:
+- [方案1]
+- [方案2]
+
+【测量方式】: [如何验证优化效果]`,
+
+        ui: `【调整位置】: [具体页面和元素]
+
+【当前状态】: [现在的样式]
+
+【期望效果】: [想要的样式]
+
+【具体要求】:
+- 颜色: [色值]
+- 尺寸: [具体数值]
+- 动画: [效果描述]
+
+【兼容要求】:
+- [ ] 深色模式
+- [ ] 移动端适配
+
+【参考截图】: PrtSc/style_xxx.png`
+    };
+
+    // 模板下拉菜单切换
+    function toggleTemplateDropdown() {
+        var dropdown = document.querySelector('.template-dropdown');
+        dropdown.classList.toggle('open');
+    }
+
+    // 点击其他地方关闭下拉菜单
+    document.addEventListener('click', function(e) {
+        var dropdown = document.querySelector('.template-dropdown');
+        if (dropdown && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // 插入模板
+    function insertTemplate(type) {
+        var template = promptTemplates[type];
+        if (template) {
+            var input = document.getElementById('prompt-input');
+            var currentValue = input.value.trim();
+            if (currentValue) {
+                input.value = currentValue + '\n\n' + template;
+            } else {
+                input.value = template;
+            }
+            input.focus();
+            showToast('已插入模板', 'success');
+        }
+        // 关闭下拉菜单
+        document.querySelector('.template-dropdown').classList.remove('open');
+    }
+
+    // 模型选择相关
+    function saveModelChoice() {
+        var select = document.getElementById('model-select');
+        localStorage.setItem('ai_optimize_model', select.value);
+    }
+
+    function loadModelChoice() {
+        var saved = localStorage.getItem('ai_optimize_model');
+        if (saved) {
+            var select = document.getElementById('model-select');
+            select.value = saved;
+        }
+    }
+
+    // 页面加载时恢复模型选择
+    loadModelChoice();
+
+    // AI 优化 Prompt
+    function aiOptimizePrompt() {
+        var content = document.getElementById('prompt-input').value.trim();
+        if (!content) {
+            showToast('请先输入 Prompt 内容', 'error');
+            return;
+        }
+
+        if (content.length < 10) {
+            showToast('Prompt 内容太短，无法优化', 'error');
+            return;
+        }
+
+        var selectedModel = document.getElementById('model-select').value;
+        var btn = document.getElementById('btn-ai-optimize');
+        btn.classList.add('loading');
+        btn.disabled = true;
+        btn.querySelector('span:last-child').textContent = '优化中...';
+
+        fetch('/api/prompt/optimize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content, model: selectedModel })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            btn.querySelector('span:last-child').textContent = 'AI 优化 Prompt';
+
+            if (data.success) {
+                // 显示预览弹窗
+                document.getElementById('ai-original-prompt').textContent = content;
+                document.getElementById('ai-optimized-prompt').value = data.optimized;
+                document.getElementById('ai-modal-overlay').classList.add('visible');
+                document.getElementById('ai-modal').classList.add('visible');
+            } else {
+                showToast('优化失败: ' + (data.error || '未知错误'), 'error');
+            }
+        })
+        .catch(function(err) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            btn.querySelector('span:last-child').textContent = 'AI 优化 Prompt';
+            showToast('请求失败，请稍后重试', 'error');
+        });
+    }
+
+    // 关闭 AI 弹窗
+    function closeAiModal() {
+        document.getElementById('ai-modal-overlay').classList.remove('visible');
+        document.getElementById('ai-modal').classList.remove('visible');
+    }
+
+    // 应用优化结果
+    function applyOptimizedPrompt() {
+        var optimized = document.getElementById('ai-optimized-prompt').value;
+        document.getElementById('prompt-input').value = optimized;
+        closeAiModal();
+        showToast('已应用优化结果', 'success');
+    }
+
+    // ESC 键关闭弹窗
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAiModal();
+        }
+    });
 
     // Filter by status
     function filterByStatus(status) {
@@ -344,20 +1003,20 @@
     }
 
     function deleteTodo(id) {
-        if (!confirm('确定要删除这条待执行Prompt吗？')) return;
-
-        fetch('/api/prompt-todos/' + id, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTodos();
-                showToast('已删除', 'success');
-            } else {
-                showToast('删除失败: ' + data.error, 'error');
-            }
-        });
+        window.AppUtils.showConfirm('确定要删除这条待执行Prompt吗？', function() {
+            fetch('/api/prompt-todos/' + id, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos();
+                    showToast('已删除', 'success');
+                } else {
+                    showToast('删除失败: ' + data.error, 'error');
+                }
+            });
+        }, { confirmText: '删除', danger: true });
     }
 
     function archiveTodo(id) {
@@ -370,25 +1029,25 @@
             return;
         }
 
-        if (!confirm('确认将此prompt归档至历史记录？')) return;
+        window.AppUtils.showConfirm('确认将此prompt归档至历史记录？', function() {
+            // Auto-generate tags
+            var tags = generateTags(todo.content);
 
-        // Auto-generate tags
-        var tags = generateTags(todo.content);
-
-        fetch('/api/prompt-todos/' + id + '/complete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tags: tags })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTodos();
-                showToast('已归档至历史记录', 'success');
-            } else {
-                showToast('操作失败: ' + data.error, 'error');
-            }
-        });
+            fetch('/api/prompt-todos/' + id + '/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tags: tags })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos();
+                    showToast('已归档至历史记录', 'success');
+                } else {
+                    showToast('操作失败: ' + data.error, 'error');
+                }
+            });
+        }, { confirmText: '归档' });
     }
 
     function editTodo(id) {
@@ -528,18 +1187,7 @@
     }
 
     function showToast(message, type) {
-        var container = document.getElementById('toast-container');
-        var toast = document.createElement('div');
-        toast.className = 'toast toast-' + type;
-        toast.textContent = message;
-        container.appendChild(toast);
-
-        setTimeout(function() {
-            toast.classList.add('toast-hide');
-            setTimeout(function() {
-                toast.remove();
-            }, 300);
-        }, 2000);
+        AppUtils.showToast(message, type);
     }
 
     // Initialize

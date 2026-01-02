@@ -18,6 +18,15 @@
     {% block body_content %}{% endblock %}
 
     <script>
+    // 全局鼠标位置跟踪
+    window._mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    document.addEventListener('mousemove', function(e) {
+        window._mousePos = { x: e.clientX, y: e.clientY };
+    });
+    document.addEventListener('click', function(e) {
+        window._mousePos = { x: e.clientX, y: e.clientY };
+    });
+
     // Shared utilities
     window.AppUtils = {
         formatDate: function(isoString) {
@@ -38,12 +47,37 @@
                       .replace(/\n/g, '<br>');
         },
         showToast: function(message, type, containerId) {
-            var container = document.getElementById(containerId || 'toast-container');
-            if (!container) return;
+            // 创建 toast 元素
             var toast = document.createElement('div');
-            toast.className = 'toast toast-' + type;
+            toast.className = 'toast toast-' + type + ' toast-at-mouse';
             toast.textContent = message;
-            container.appendChild(toast);
+            document.body.appendChild(toast);
+
+            // 计算位置（鼠标附近，稍微偏移避免遮挡）
+            var mouseX = window._mousePos.x;
+            var mouseY = window._mousePos.y;
+            var offsetX = 15;
+            var offsetY = -40;
+
+            // 获取 toast 尺寸后调整位置
+            var rect = toast.getBoundingClientRect();
+            var posX = mouseX + offsetX;
+            var posY = mouseY + offsetY;
+
+            // 边界检测，确保不超出屏幕
+            if (posX + rect.width > window.innerWidth - 10) {
+                posX = mouseX - rect.width - offsetX;
+            }
+            if (posY < 10) {
+                posY = mouseY + 20;
+            }
+            if (posY + rect.height > window.innerHeight - 10) {
+                posY = window.innerHeight - rect.height - 10;
+            }
+
+            toast.style.left = posX + 'px';
+            toast.style.top = posY + 'px';
+
             setTimeout(function() {
                 toast.classList.add('toast-hide');
                 setTimeout(function() { toast.remove(); }, 300);

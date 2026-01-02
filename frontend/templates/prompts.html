@@ -332,18 +332,7 @@
     }
 
     function showToast(message, type) {
-        var container = document.getElementById('toast-container');
-        var toast = document.createElement('div');
-        toast.className = 'toast toast-' + type;
-        toast.textContent = message;
-        container.appendChild(toast);
-
-        setTimeout(function() {
-            toast.classList.add('toast-hide');
-            setTimeout(function() {
-                toast.remove();
-            }, 300);
-        }, 2000);
+        AppUtils.showToast(message, type);
     }
 
     // Initialize

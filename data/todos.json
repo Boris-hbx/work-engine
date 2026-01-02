@@ -3,12 +3,12 @@
     {
       "id": "t002",
       "text": "所长上岗大纲梳理",
-      "tab": "today",
-      "quadrant": "not-important-not-urgent",
+      "tab": "month",
+      "quadrant": "important-urgent",
       "completed": false,
       "completed_at": null,
       "created_at": "2025-01-01T09:00:00",
-      "updated_at": "2025-12-29T17:26:18.817810"
+      "updated_at": "2025-12-31T19:45:04.124989"
     },
     {
       "id": "t003",
@@ -24,11 +24,11 @@
       "id": "t004",
       "text": "zhiwei情况梳理，总结",
       "tab": "today",
-      "quadrant": "important-not-urgent",
+      "quadrant": "not-important-urgent",
       "completed": false,
       "completed_at": null,
       "created_at": "2025-01-01T09:00:00",
-      "updated_at": "2025-12-29T21:15:06.306101"
+      "updated_at": "2025-12-31T19:45:08.278951"
     },
     {
       "id": "t005",
@@ -55,10 +55,10 @@
       "text": "报销",
       "tab": "today",
       "quadrant": "important-urgent",
-      "completed": false,
-      "completed_at": null,
+      "completed": true,
+      "completed_at": "2025-12-31T17:44:23.950249",
       "created_at": "2025-01-01T09:00:00",
-      "updated_at": "2025-12-29T20:07:16.825388"
+      "updated_at": "2025-12-31T17:44:23.950280"
     },
     {
       "id": "w003",
@@ -173,12 +173,12 @@
     {
       "id": "m003",
       "text": "驾照",
-      "tab": "today",
+      "tab": "week",
       "quadrant": "important-urgent",
       "completed": false,
       "completed_at": null,
       "created_at": "2025-01-01T09:00:00",
-      "updated_at": "2025-12-30T17:22:06.381187"
+      "updated_at": "2025-12-31T17:44:18.530588"
     },
     {
       "id": "m004",
@@ -193,12 +193,12 @@
     {
       "id": "m005",
       "text": "上岗谈话",
-      "tab": "today",
+      "tab": "week",
       "quadrant": "important-urgent",
       "completed": false,
       "completed_at": null,
       "created_at": "2025-01-01T09:00:00",
-      "updated_at": "2025-12-30T17:22:24.220610"
+      "updated_at": "2025-12-31T17:44:40.840342"
     },
     {
       "id": "m006",
@@ -246,10 +246,10 @@
       "tab": "today",
       "quadrant": "important-urgent",
       "tags": [],
-      "completed": false,
-      "completed_at": null,
+      "completed": true,
+      "completed_at": "2025-12-31T17:44:27.699427",
       "created_at": "2025-12-30T17:21:49.614700",
-      "updated_at": "2025-12-30T17:21:49.614700"
+      "updated_at": "2025-12-31T17:44:27.699437"
     },
     {
       "id": "d3565449",
@@ -260,7 +260,7 @@
       "completed": false,
       "completed_at": null,
       "created_at": "2025-12-30T17:21:56.832948",
-      "updated_at": "2025-12-30T17:21:56.832948"
+      "updated_at": "2025-12-31T17:54:41.701390"
     }
   ]
 }

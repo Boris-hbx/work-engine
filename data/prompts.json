@@ -847,5 +847,213 @@
       "数据"
     ],
     "created_at": "2025-12-29T20:06:57.396881"
+  },
+  {
+    "id": "e7fcfac4",
+    "content": "You are a Spec-Driven AI Agent.\n\nYour primary responsibility is NOT to directly solve tasks,\nbut to first transform any ambiguous or high-level request\ninto a clear, executable SPECIFICATION (Spec).\n\nYou must strictly follow this workflow:\n\n1. Spec First\n- Never jump to implementation or execution.\n- Always produce a formal Spec before any action.\n\n2. Spec Structure\nEvery Spec MUST explicitly define:\n- Objective: What problem is being solved\n- Non-Goals: What is explicitly out of scope\n- Inputs: Data, constraints, assumptions\n- Outputs: Format, schema, success criteria\n- Behavioral Rules: Allowed and forbidden behaviors\n- Edge Cases & Failure Modes\n- Evaluation Criteria: How success is measured\n\n3. Clarification Rules\n- If any part of the request is ambiguous, incomplete, or underspecified,\n  you MUST stop and ask targeted clarification questions.\n- Do NOT guess or hallucinate missing requirements.\n\n4. Execution Rules\n- Only proceed to execution AFTER the Spec is explicitly approved.\n- Execution must strictly conform to the approved Spec.\n- Any deviation requires Spec revision.\n\n5. Communication Style\n- Be precise, structured, and implementation-oriented.\n- Avoid marketing language, fluff, or vague wording.",
+    "tags": [
+      "UI设计",
+      "Todo",
+      "数据"
+    ],
+    "created_at": "2025-12-31T18:15:11.225518"
+  },
+  {
+    "id": "74b9c3bd",
+    "content": "推荐 Task Spec 模板（你本地维护）\ntask_name: <string>\n\nbackground:\n  # 背景信息，为什么要做这件事\n\nobjective:\n  # 本次要解决的具体问题\n\nconstraints:\n  - 技术限制\n  - 时间 / 成本限制\n  - 合规要求\n\ninputs:\n  - 描述输入数据或已有资源\n\nexpected_outputs:\n  format: <text | json | code | diagram>\n  details: <what should be included>\n\nout_of_scope:\n  - 明确不做的事情\n\nevaluation:\n  - 可验证的成功标准\n\n\n📌 每次运行 Agent，我只填这个 YAML\n📌 Agent 会自动补齐完整 Spec",
+    "tags": [
+      "前端",
+      "Todo",
+      "数据"
+    ],
+    "created_at": "2025-12-31T18:15:12.959286"
+  },
+  {
+    "id": "b4cba783",
+    "content": "可以加：\n\nSpec Diff（Spec 变更对比）\n\nSpec → Prompt 自动编译\n\nSpec → Eval Case 自动生成\n\nMulti-Agent Spec Negotiation\n\nSpec Lint（自动检查是否完整）",
+    "tags": [
+      "Prompt"
+    ],
+    "created_at": "2025-12-31T18:15:14.817814"
+  },
+  {
+    "id": "86c1a8e3",
+    "content": "给我定制一版完全贴合你系统的 Meta Prompt\n\n并设计 Spec → Agent → Tool 的完整接口\n\n直接一起 把现有 Agent 改造成 Spec-Driven 架构",
+    "tags": [
+      "后端",
+      "Prompt"
+    ],
+    "created_at": "2025-12-31T18:15:16.576281"
+  },
+  {
+    "id": "6464aeb8",
+    "content": "那个报销助手的应用，我设想了一些新的功能，你看一下：\n\nAI 负责：\n写、整理、分析、提醒、生成\n提高速度 & 降低低级错误\n\n1.文书与信息类\n记忆功能，根据个人选取优先性工作类别进行自动分类\n邮件草拟 / 回复初稿\n会议纪要整理\n报告、PPT 文案整理\n中英文沟通转换\n信息汇总、要点提炼\n\n2. 日程与事务管理\n日程初步安排\n天气管理，小鱼在不同的天气会有不一样的表示以及画面变化\n会议时间建议（跨时区）\n会议前提醒 & 会后 follow-up 模板\n任务清单整理\n\n3. 流程型支持工作 \n报销内容类别匹配并附上报销说明整理\n流程指引解释\n同类报销内容模板化文件处理\n\n4.助理个性化特性：\n个人对话偏好记忆\n工作风格\n常用表达\n决策偏好（理性 / 快速 / 风险规避）\n\n5.角色型 AI：协助思考及决策内容\n「市场总监 AI」\n「HR / 项目经理 AI」\n「高管助理 AI」",
+    "tags": [
+      "问题修复",
+      "新功能",
+      "Todo"
+    ],
+    "created_at": "2025-12-31T18:15:22.646693"
+  },
+  {
+    "id": "3f3928be",
+    "content": "> 帮我做一个ppt翻译的小公举，放到“工具箱”里面。功能大概是拖进去一个ppt，左边能显示ppt的每一页，右边对应翻译之后的ppt的每一页。中间有个进度条，拖动它的话两边的ppt  \n  能同时滑动翻页。然后我希望有一个这样的功能，在一个合适的位置放一个“截图”的按钮或者icon，点击它就可以启动截图功能，然后如果我在左边待翻译的ppt框选，会弹出两个框  \n  ，左边是待翻译的截图，右边是翻译好的文字，这时候可以修改文字。然后点击保存，就自动保存到右边目标翻译ppt的对应左边框选截图的位置上去。",
+    "tags": [
+      "新功能",
+      "数据"
+    ],
+    "created_at": "2025-12-31T22:08:10.962636"
+  },
+  {
+    "id": "350ff707",
+    "content": "针对手机试验田：\n\n你是一个交互原型工程师，目标是实现一个“手机触屏交互模拟环境”，用于在电脑上开发和测试触屏语义交互。\n\n请在已有能力基础之上考虑，实现一个最小可运行版本（MVP）\n请参考以下要求设计并实现一个原型：\n\n1. 模拟设备\n\n创建一个同比例的手机屏幕区域（接近 9:16 或 20:9）\n\n屏幕内部放置若干 Icon，代表手机中的 App\n\n每个 Icon 是一个可交互、可识别的 UI 元素\n\n2. 输入语义映射\n\n鼠标进入手机区域时：\n\n隐藏系统光标\n\n显示一个小球，表示“手指悬浮在屏幕上”\n\n鼠标移动时，小球跟随移动\n\n3. 点击与按压反馈\n\n鼠标左键单击：\n\n以小球为中心产生一次光晕向四周扩散\n\n表示一次 Tap 触屏事件\n\n鼠标左键按住不放：\n\n小球进入持续触发状态\n\n显示持续光晕 + 闪电 / 能量效果\n\n一直保持，直到松开左键\n\n松开左键后：\n\n恢复为普通悬浮小球状态\n\n4. 状态管理\n\n系统需要明确区分并维护以下状态：\n\nhover（悬浮）\n\ntap（短暂点击）\n\npress（持续按压）\n\n每次状态变化都应可被程序监听和记录\n\n5. 可扩展性\n\n设计代码结构时，请考虑：\n\n后续可接入 AI / Agent\n\n可感知当前鼠标对应的 UI 元素\n\n可输出结构化交互事件数据\n\n6. 目标\n\n这是一个用于交互语义验证的实验性原型\n\n不追求复杂 UI，美观次于语义清晰\n\n重点是：让鼠标输入在语义上“像触屏”",
+    "tags": [
+      "UI设计",
+      "交互",
+      "测试"
+    ],
+    "created_at": "2025-12-31T22:17:21.285026"
+  },
+  {
+    "id": "d5e8b7b1",
+    "content": "鸿蒙试验田：\n\n请实现以下鸿蒙手机桌面主要组件及其交互行为：\n\n1) App 图标：\n- 支持点击 (Click)\n- 支持长按 (Long press) 弹出快捷菜单\n- 支持拖动 (Drag) 重排或进入卡片添加模式\n\n2) 服务卡片 (Widgets)：\n- 支持以不同尺寸加入桌面\n- 支持显示动态内容\n- 支持 Click / Swipe 交互反馈\n\n3) 文件夹：\n- 图标集合，可点击展开/折叠\n- 支持拖进/拖出图标组成或解散文件夹\n\n4) 状态栏：\n- 显示时间、状态图标等静态信息\n- 支持下滑手势触发控制中心模拟\n\n5) 屏幕分页：\n- 支持左右横向滑动切换主屏页面\n- 显示屏幕指示器\n\n6) 推荐栏 / 小艺建议：\n- 可模拟动态推荐内容\n- 支持水平滑动和点击事件\n\n7) 快捷操作栏 (Dock)：\n- 固定常用应用\n- 支持点击启动和拖动重排\n\n交互要求：\n- 鼠标行为语义映射为触屏交互 (Hover -> 手指悬停, Click -> Tap, Hold -> Press, Drag -> 拖动, Swipe -> 滑动)\n- 所有组件必须对交互有视觉反馈\n- 交互事件必须可监听和记录，用于后续 AI 行为分析\n\n输出：\n- 可运行模拟器\n- 内部状态 API 可被 AI agent 使用，例如 `onIconClick(id)`, `onWidgetSwipe(id, direction)`\n- 桌面 UI 必须支持动态组件添加/删除/重排\n- 鼠标交互必须即时反馈视觉效果，不影响功能路径",
+    "tags": [
+      "新功能",
+      "UI设计",
+      "后端"
+    ],
+    "created_at": "2025-12-31T22:17:25.971760"
+  },
+  {
+    "id": "ab0fe532",
+    "content": "模拟手指的那个小球，我建议是红色，与彗星小球区分开。然后单击的时候产生的光晕要明显。不如看不出来是单击（也就是模拟手指触碰）\n彗星小球尽量游走在空隙之间，当穿过有颜色的区域时，彗星小球要一定程度的透明，并让自己的颜色与所经过的背景色类似颜色（像变色龙）\n现在小球的运动轨迹很奇怪，我建议你给彗星小球专门做一个skill，规范它的行为模式。除了上面我说的这些，我觉得它应该有几种运动形态，懒散    \n模式，这时候就是匀速的，慢慢悠悠的，没有规律的乱转；其它的你可以发挥一下。",
+    "tags": [],
+    "created_at": "2025-12-31T22:52:59.714299"
+  },
+  {
+    "id": "1e656995",
+    "content": "小球要一直都有尾巴。\n小球的速度要再快一点点。\n小球要能有70%的时间，会围绕着轮廓安排自己的轨迹，比如遇到圆形的时钟，可以有80%的概率会按照时钟外面的圈顺时针旋转一周，遇到矩    \n形框子，要能够绕着矩形的框子走。你明白么？",
+    "tags": [],
+    "created_at": "2025-12-31T23:00:06.900005"
+  },
+  {
+    "id": "afb742a3",
+    "content": "我想弄个多租户管理系统，有个账号登陆界面，账号密码统一保存在本地private文件夹里面，并实现一个基本加密逻辑。密码4个数字的pin码即可。",
+    "tags": [
+      "UI设计",
+      "数据"
+    ],
+    "created_at": "2026-01-01T13:07:07.751856"
+  },
+  {
+    "id": "c8287721",
+    "content": "帮我设计一个日程管理小工具，放在工具箱里面，\n能与我本地的Outlook连接，获取，或推送日程安排。或者先完成开发对接outlook。",
+    "tags": [],
+    "created_at": "2026-01-01T13:07:09.701621"
+  },
+  {
+    "id": "8a0d0bda",
+    "content": "todo里面的待办事项，要能够被编辑修改、保存。",
+    "tags": [
+      "Todo",
+      "数据"
+    ],
+    "created_at": "2026-01-01T13:07:11.527539"
+  },
+  {
+    "id": "0f565cd2",
+    "content": "请你分析我当前的开发模式。给出总结。",
+    "tags": [],
+    "created_at": "2026-01-01T13:07:13.497287"
+  },
+  {
+    "id": "bd42a888",
+    "content": "你弄个全流程，并且分清楚那些事你做，哪些事情我做，然后把这个流程列好放到“学习总结\"里面。在检查清单右边，比如叫做\"开发流程”。它的   \n  作用一个是让我清晰的知道你和我都应该做什么，以及怎么做，什么时候做，我和你应该分别关注什么。",
+    "tags": [],
+    "created_at": "2026-01-01T13:55:07.423220"
+  },
+  {
+    "id": "4f790115",
+    "content": "参考一下业界标杆，如何高效、正确的使用claude code来开发，他们都是怎么开发的，都做哪些动作，他们的顺序是什么？有哪些是我可以参考的？",
+    "tags": [],
+    "created_at": "2026-01-01T13:55:19.152728"
+  },
+  {
+    "id": "7b215c01",
+    "content": "左边弄个Prompt中心。\n然后代执行prompt，以及promp历史记录，都放到这里。进来后，默认进入待执行prompt子页面。\n然后你把“学习总结”里面的prompt模版，放到“待执行prompt里面来”，放个按钮，可以一键把prompt模版放进来。然后弄一个按钮“一键AI优化prompt”，并且让我能够编辑这个prompt，确认优化的prompt没问题后，再替换已有的prompt。",
+    "tags": [
+      "优化",
+      "Prompt"
+    ],
+    "created_at": "2026-01-01T14:12:04.674827"
+  },
+  {
+    "id": "35e1530f",
+    "content": "现在整个界面都在下雪，请你看看怎么回事，可以在右边番茄边上弄个开关按钮。",
+    "tags": [
+      "UI设计"
+    ],
+    "created_at": "2026-01-01T14:12:07.776754"
+  },
+  {
+    "id": "6ee5d80b",
+    "content": "【功能名称】: 大模型选择器  \n【功能描述】: 在“AI优化prompt”功能中，增加一个模型选择器，允许用户从支持的多个大语言模型中选择一个进行优化任务，而不是使用默认模型。  \n【验收标准】:  \n1. 界面中显示一个清晰的下拉菜单或选择器，列出所有可用的大模型选项（例如：GPT-4, Claude, Gemini等）。  \n2. 用户选择模型后，系统应记住该选择，并在后续的优化请求中稳定使用所选模型。  \n3. 当用户未主动选择时，系统应有一个明确且合理的默认模型（例如，在列表中高亮或标注“默认”）。  \n4. 模型切换后，优化结果的质量和风格应与所选模型特性相符（可通过简单测试验证）。  \n【技术约束】: 需确保后端API支持所选模型的调用与切换。",
+    "tags": [
+      "新功能",
+      "优化",
+      "UI设计"
+    ],
+    "created_at": "2026-01-01T14:22:16.942416"
+  },
+  {
+    "id": "c167abf3",
+    "content": "【功能名称】：天气特效开关  \n【功能描述】：  \n在界面右侧番茄图标旁添加一个开关按钮，用于控制当前天气特效（如下雪、下雨等）的显示与隐藏。用户可通过点击该按钮切换特效状态，且开关需明确指示当前特效是否启用。  \n\n【验收标准】：  \n1. 开关按钮位于界面右侧，紧邻番茄图标，视觉协调且易于点击  \n2. 按钮默认状态与当前天气特效状态一致（如特效开启时按钮为“开”）  \n3. 点击开关可立即切换天气特效的显示/隐藏，无延迟或闪烁  \n4. 开关状态变化时有明确的视觉反馈（如颜色、图标变化）  \n5. 特效关闭后界面恢复无天气元素的原始状态，不残留视觉元素  \n\n【技术约束】：  \n- 开关需保存用户偏好，页面刷新后保持上次设置状态  \n- 特效切换不影响页面其他功能及性能",
+    "tags": [
+      "新功能",
+      "优化",
+      "UI设计"
+    ],
+    "created_at": "2026-01-01T14:22:26.239035"
+  },
+  {
+    "id": "63c56512",
+    "content": "【功能名称】：版本管理模块开发  \n【功能描述】：在应用左侧导航栏的“智脑中枢”下新增一个“版本管理”模块，用于集中管理与开发相关的功能，包括待执行prompt、特性验收、prompt历史记录、学习总结以及现有的prompt中心。该模块旨在提供便捷的入口，避免用户频繁打开文档处理开发任务。  \n\n把“Pending_xxx”的验收，从文档里面输入文字，改为在这个界面里面用按钮点击的方式进行。\n\n【验收标准】：  \n1. 左侧导航栏“智脑中枢”下新增“版本管理”菜单项，点击可展开或跳转到对应页面。  \n2. “版本管理”模块内包含以下子功能入口：  \n   - 待执行prompt  \n   - 特性验收  \n   - prompt历史记录  \n   - 学习总结  \n   - prompt中心（现有功能迁移或链接至此）  \n3. 所有子功能页面加载正常，无错误提示，且数据展示准确。  \n4. 用户可通过该模块直接访问相关功能，无需额外打开外部文档。  \n\n【技术约束】：  \n- 保持现有导航栏结构和样式一致性。  \n- 确保模块响应式设计，适配不同屏幕尺寸。",
+    "tags": [
+      "问题修复",
+      "新功能",
+      "UI设计"
+    ],
+    "created_at": "2026-01-01T15:49:57.851465"
+  },
+  {
+    "id": "58ccd8b0",
+    "content": "【功能名称】: 特性验收信息展示优化\n\n【功能描述】:\n优化“特性验收”部分的显示内容。在每个验收特性（例如标题“### acc-001: 待验收机制”）的下方，新增一个展示具体验收信息。最好能包含Prompt ID、功能、位置和验收步骤等关键信息。",
+    "tags": [
+      "新功能",
+      "优化",
+      "Prompt"
+    ],
+    "created_at": "2026-01-01T15:49:59.752551"
+  },
+  {
+    "id": "51e26b68",
+    "content": "【功能名称】: 塔防游戏页面卡死问题修复  \n【功能描述】: 修复在点击塔防游戏时页面卡死，并导致弹出“等待”或退出弹窗的问题。  \n【验收标准】:  \n1. 点击塔防游戏入口后，页面正常加载，无卡顿或卡死现象  \n2. 游戏过程中无异常弹窗（如“等待”或退出提示）弹出  \n3. 连续操作（如多次进入/退出游戏）后，页面仍保持稳定运行  \n【技术约束】: 需确保修复方案不影响其他游戏模块的正常功能",
+    "tags": [
+      "问题修复",
+      "新功能"
+    ],
+    "created_at": "2026-01-01T15:50:10.798189"
+  },
+  {
+    "id": "7cafc9e3",
+    "content": "整个应用有很多“确认”弹窗“”，都是在屏幕的最上方，每次鼠标都要跑很远，我觉得不好，你改改",
+    "tags": [],
+    "created_at": "2026-01-01T19:19:40.984799"
+  },
+  {
+    "id": "933e8c6a",
+    "content": "只是简单的增加敌人HP是不行的，一开始就无法获胜啊。你应该专门弄一个游戏推演模块，用来模拟推演游戏的平衡性，即让用户能赢，但赢的     \n比较艰难。而不是完全无法获胜。",
+    "tags": [],
+    "created_at": "2026-01-01T19:39:20.551034"
   }
 ]

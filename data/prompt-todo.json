@@ -12,39 +12,15 @@
     "created_at": "2025-12-28T13:15:39.981357"
   },
   {
-    "id": "3f726f1f",
-    "content": "我想弄个多租户管理系统，有个账号登陆界面，账号密码统一保存在本地private文件夹里面，并实现一个基本加密逻辑。密码4个数字的pin码即可。",
+    "id": "a37615ff",
+    "content": "我系统里面所有的“提示”，不要在屏幕的最上方或者最右侧。我希望谁能在我鼠标附近，便于点击确认。现在就好像是系统默认的，每次我都要鼠标移动到很远的地方去点击。",
     "status": "待修改",
-    "created_at": "2025-12-29T19:20:06.401714"
+    "created_at": "2025-12-31T17:20:34.885267"
   },
   {
-    "id": "fbbedb19",
-    "content": "有没有什么办法，让每次你push github的时候，不要上传private数据，不要我每次提醒，而是你基于某种原则，可以不让我操心？如果有，请帮我实现这个功能。",
-    "status": "已执行",
-    "created_at": "2025-12-29T19:30:28.657757"
-  },
-  {
-    "id": "7fece164",
-    "content": "You are a Spec-Driven AI Agent.\n\nYour primary responsibility is NOT to directly solve tasks,\nbut to first transform any ambiguous or high-level request\ninto a clear, executable SPECIFICATION (Spec).\n\nYou must strictly follow this workflow:\n\n1. Spec First\n- Never jump to implementation or execution.\n- Always produce a formal Spec before any action.\n\n2. Spec Structure\nEvery Spec MUST explicitly define:\n- Objective: What problem is being solved\n- Non-Goals: What is explicitly out of scope\n- Inputs: Data, constraints, assumptions\n- Outputs: Format, schema, success criteria\n- Behavioral Rules: Allowed and forbidden behaviors\n- Edge Cases & Failure Modes\n- Evaluation Criteria: How success is measured\n\n3. Clarification Rules\n- If any part of the request is ambiguous, incomplete, or underspecified,\n  you MUST stop and ask targeted clarification questions.\n- Do NOT guess or hallucinate missing requirements.\n\n4. Execution Rules\n- Only proceed to execution AFTER the Spec is explicitly approved.\n- Execution must strictly conform to the approved Spec.\n- Any deviation requires Spec revision.\n\n5. Communication Style\n- Be precise, structured, and implementation-oriented.\n- Avoid marketing language, fluff, or vague wording.",
-    "status": "已执行",
-    "created_at": "2025-12-30T06:07:26.052595"
-  },
-  {
-    "id": "1b2c9131",
-    "content": "推荐 Task Spec 模板（你本地维护）\ntask_name: <string>\n\nbackground:\n  # 背景信息，为什么要做这件事\n\nobjective:\n  # 本次要解决的具体问题\n\nconstraints:\n  - 技术限制\n  - 时间 / 成本限制\n  - 合规要求\n\ninputs:\n  - 描述输入数据或已有资源\n\nexpected_outputs:\n  format: <text | json | code | diagram>\n  details: <what should be included>\n\nout_of_scope:\n  - 明确不做的事情\n\nevaluation:\n  - 可验证的成功标准\n\n\n📌 每次运行 Agent，我只填这个 YAML\n📌 Agent 会自动补齐完整 Spec",
-    "status": "已执行",
-    "created_at": "2025-12-30T06:07:58.069153"
-  },
-  {
-    "id": "3cf8b039",
-    "content": "可以加：\n\nSpec Diff（Spec 变更对比）\n\nSpec → Prompt 自动编译\n\nSpec → Eval Case 自动生成\n\nMulti-Agent Spec Negotiation\n\nSpec Lint（自动检查是否完整）",
-    "status": "已执行",
-    "created_at": "2025-12-30T06:09:38.346694"
-  },
-  {
-    "id": "3ba1d11f",
-    "content": "给我定制一版完全贴合你系统的 Meta Prompt\n\n并设计 Spec → Agent → Tool 的完整接口\n\n直接一起 把现有 Agent 改造成 Spec-Driven 架构",
-    "status": "已执行",
-    "created_at": "2025-12-30T06:10:13.181162"
+    "id": "5c481d8f",
+    "content": "另外不知道你之前修改了什么前端组件，导致那些小球和小鱼的运动效果没有之前那么顺滑，鼠标过去后的逃逸也不够敏捷了啊。",
+    "status": "待执行",
+    "created_at": "2026-01-01T19:39:07.975220"
   }
 ]

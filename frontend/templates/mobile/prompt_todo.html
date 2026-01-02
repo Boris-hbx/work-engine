@@ -449,15 +449,16 @@ function copyPrompt(id) {
 }
 
 function deleteTodo(id) {
-    if (!confirm('确定删除？')) return;
-    fetch('/api/prompt-todos/' + id, { method: 'DELETE' })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTodos();
-                showToast('已删除', 'success');
-            }
-        });
+    window.AppUtils.showConfirm('确定删除？', function() {
+        fetch('/api/prompt-todos/' + id, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos();
+                    showToast('已删除', 'success');
+                }
+            });
+    }, { confirmText: '删除', danger: true });
 }
 
 function escapeHtml(str) {

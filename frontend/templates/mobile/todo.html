@@ -316,33 +316,38 @@ function toggleTask(id) {
 
     var newCompleted = !task.completed;
 
+    var doToggle = function() {
+        fetch('/api/todos/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({completed: newCompleted})
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                loadTodos();
+                showToast(newCompleted ? '已完成' : '已恢复', 'success');
+            }
+        });
+    };
+
     // 如果是标记为完成，需要确认
     if (newCompleted) {
-        if (!confirm('确定要将此任务标记为已完成吗？')) return;
+        window.AppUtils.showConfirm('确定要将此任务标记为已完成吗？', doToggle, { confirmText: '完成' });
+    } else {
+        doToggle();
     }
-
-    fetch('/api/todos/' + id, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({completed: newCompleted})
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            loadTodos();
-            showToast(newCompleted ? '已完成' : '已恢复', 'success');
-        }
-    });
 }
 
 function deleteTask(id) {
-    if (!confirm('删除此任务？')) return;
-    fetch('/api/todos/' + id, {method: 'DELETE'})
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                loadTodos();
-                showToast('已删除', 'success');
-            }
-        });
+    window.AppUtils.showConfirm('删除此任务？', function() {
+        fetch('/api/todos/' + id, {method: 'DELETE'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    loadTodos();
+                    showToast('已删除', 'success');
+                }
+            });
+    }, { confirmText: '删除', danger: true });
 }
 
 function showAddModal() {

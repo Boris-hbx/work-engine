@@ -106,6 +106,14 @@ body {
     box-shadow: var(--shadow-medium);
 }
 
+/* 鼠标附近显示的 toast */
+.toast-at-mouse {
+    position: fixed;
+    z-index: 10001;
+    animation: toastPopIn 0.25s ease;
+    pointer-events: none;
+}
+
 .toast-success {
     background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
 }
@@ -118,14 +126,130 @@ body {
     animation: toastOut 0.3s ease forwards;
 }
 
+.toast-at-mouse.toast-hide {
+    animation: toastPopOut 0.25s ease forwards;
+}
+
 @keyframes toastIn {
     from { opacity: 0; transform: translateX(50px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes toastPopIn {
+    from { opacity: 0; transform: scale(0.8) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes toastPopOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.8); }
+}
+
 @keyframes toastOut {
     from { opacity: 1; transform: translateX(0); }
     to { opacity: 0; transform: translateX(50px); }
+}
+
+/* Custom Confirm Dialog */
+.confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: confirmFadeIn 0.2s ease;
+}
+
+.confirm-dialog {
+    background: var(--card-bg, white);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    min-width: 300px;
+    max-width: 400px;
+    overflow: hidden;
+    animation: confirmSlideIn 0.25s ease;
+}
+
+.confirm-body {
+    padding: 24px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary, #333);
+    text-align: center;
+}
+
+.confirm-actions {
+    display: flex;
+    border-top: 1px solid var(--border-light, #eee);
+}
+
+.confirm-btn {
+    flex: 1;
+    padding: 14px 20px;
+    border: none;
+    background: none;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.confirm-btn:first-child {
+    border-right: 1px solid var(--border-light, #eee);
+    color: var(--text-secondary, #666);
+}
+
+.confirm-btn:first-child:hover {
+    background: var(--hover-bg, #f5f5f5);
+}
+
+.confirm-btn:last-child {
+    color: #667eea;
+}
+
+.confirm-btn:last-child:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.confirm-btn.danger:last-child {
+    color: #e74c3c;
+}
+
+.confirm-btn.danger:last-child:hover {
+    background: rgba(231, 76, 60, 0.1);
+}
+
+@keyframes confirmFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes confirmSlideIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.confirm-overlay.confirm-hide {
+    animation: confirmFadeOut 0.2s ease forwards;
+}
+
+.confirm-overlay.confirm-hide .confirm-dialog {
+    animation: confirmSlideOut 0.2s ease forwards;
+}
+
+@keyframes confirmFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes confirmSlideOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.9); }
 }
 
 /* Common Button Styles */
@@ -548,6 +672,60 @@ input, textarea, select {
 .shortcut-desc {
     color: var(--text-secondary);
     font-size: 0.9rem;
+}
+
+/* ============================================
+   Weather Effect Toggle
+   ============================================ */
+.weather-toggle-fab {
+    position: fixed;
+    bottom: 145px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-medium);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 997;
+    transition: all var(--transition-fast);
+    gap: 2px;
+}
+
+.weather-toggle-fab:hover {
+    transform: scale(1.1);
+}
+
+.weather-toggle-fab.disabled {
+    background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+    opacity: 0.7;
+}
+
+.weather-toggle-fab .weather-toggle-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.weather-toggle-fab .weather-toggle-status {
+    font-size: 8px;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0.9;
+}
+
+.weather-toggle-fab.disabled .weather-toggle-status::after {
+    content: 'OFF';
+}
+
+.weather-toggle-fab:not(.disabled) .weather-toggle-status::after {
+    content: 'ON';
 }
 
 /* ============================================
